@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('carteiras', function (Blueprint $table) {
             $table->id();
             $table->foreignId('conta_bancaria_id')->constrained('contas_bancarias')->onDelete('cascade');
-            $table->string('nome')->default('Principal');
-            $table->decimal('saldo', 15, 2)->default(0);
+            $table->string('name')->default('Principal');
+            $table->decimal('balance', 15, 2)->default(0);
+            $table->enum('type', ['DEFAULT', 'WALLET'])->default('DEFAULT');
+            $table->enum('status', ['ATIVA', 'DESATIVA'])->default('ATIVA');
             $table->timestamps();
         });
     }

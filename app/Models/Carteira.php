@@ -13,8 +13,11 @@ class Carteira extends Model
 
     protected $fillable = [
         'conta_bancaria_id',
-        'nome',
-        'saldo',
+        'name',
+        'balance',
+        'type',
+        'status',
+        'approval_status',
     ];
 
     /**
