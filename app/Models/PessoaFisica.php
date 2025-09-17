@@ -61,4 +61,12 @@ class PessoaFisica extends Model
         $cep = $this->cep;
         return substr($cep, 0, 5) . '-' . substr($cep, 5, 3);
     }
+
+    /**
+     * Get all of the user's wallets.
+     */
+    public function carteiras()
+    {
+        return $this->morphMany(Carteira::class, 'owner');
+    }
 }

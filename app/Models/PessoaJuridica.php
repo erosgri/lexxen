@@ -65,4 +65,12 @@ class PessoaJuridica extends Model
         $cpf = $this->cpf_representante;
         return substr($cpf, 0, 3) . '.' . substr($cpf, 3, 3) . '.' . substr($cpf, 6, 3) . '-' . substr($cpf, 9, 2);
     }
+
+    /**
+     * Get all of the user's wallets.
+     */
+    public function carteiras()
+    {
+        return $this->morphMany(Carteira::class, 'owner');
+    }
 }

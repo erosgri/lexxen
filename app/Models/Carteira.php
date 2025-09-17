@@ -12,7 +12,6 @@ class Carteira extends Model
     protected $table = 'carteiras';
 
     protected $fillable = [
-        'conta_bancaria_id',
         'name',
         'balance',
         'type',
@@ -21,10 +20,10 @@ class Carteira extends Model
     ];
 
     /**
-     * Relacionamento com ContaBancaria
+     * Get the parent owner model (PessoaFisica or PessoaJuridica).
      */
-    public function contaBancaria()
+    public function owner()
     {
-        return $this->belongsTo(ContaBancaria::class, 'conta_bancaria_id');
+        return $this->morphTo();
     }
 }
