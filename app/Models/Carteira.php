@@ -20,7 +20,7 @@ class Carteira extends Model
     ];
 
     /**
-     * Get the parent owner model (PessoaFisica or PessoaJuridica).
+     * Get the parent owner model (PessoaFisica or PessoaJuridica). atualizado
      */
     public function owner()
     {
