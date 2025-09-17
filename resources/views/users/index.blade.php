@@ -55,23 +55,7 @@
                             @endswitch
                         </td>
                         <td>
-                            @if($user->contas_info->count() > 0)
-                                @foreach($user->contas_info as $tipo => $quantidade)
-                                    @switch($tipo)
-                                        @case('corrente')
-                                            <span class="badge bg-primary me-1">{{ $quantidade }} Corrente</span>
-                                            @break
-                                        @case('poupanca')
-                                            <span class="badge bg-success me-1">{{ $quantidade }} Poupança</span>
-                                            @break
-                                        @case('salario')
-                                            <span class="badge bg-info me-1">{{ $quantidade }} Salário</span>
-                                            @break
-                                    @endswitch
-                                @endforeach
-                            @else
-                                <span class="text-muted">Nenhuma conta</span>
-                            @endif
+                           <span class="badge bg-dark">{{ $user->contas_bancarias_count }}</span>
                         </td>
                         <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
                         <td>
@@ -143,6 +127,11 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="d-flex justify-content-center mt-4">
+            {{ $users->links() }}
         </div>
     </div>
 </div>

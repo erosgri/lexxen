@@ -69,6 +69,6 @@ Sistema de gerenciamento bancário desenvolvido em Laravel 12.
 Para acessar o sistema em ambiente de desenvolvimento, utilize as seguintes credenciais de um usuário administrador pré-cadastrado:
 
 - **E-mail:** `grigolli@bank.com`
-- **Senha:** `123456`
+- **Senha:** `12345678`
 
 ---

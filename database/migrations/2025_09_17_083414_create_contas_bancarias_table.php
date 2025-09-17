@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('contas_bancarias', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('numero_conta', 20)->unique();
+            $table->string('numero', 20)->unique();
             $table->string('agencia', 10);
             $table->enum('tipo_conta', ['corrente', 'poupanca', 'salario']);
             $table->decimal('saldo', 15, 2)->default(0);
             $table->decimal('limite', 15, 2)->default(0);
-            $table->enum('status', ['ativa', 'inativa', 'bloqueada'])->default('ativa');
+            $table->enum('status', ['ATIVA', 'BLOQUEADA'])->default('ATIVA');
             $table->timestamps();
         });
     }

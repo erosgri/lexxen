@@ -24,6 +24,7 @@
                         </a>
                     </li>
                     
+                    @if (Auth::user() && Auth::user()->tipo_usuario === 'admin')
                     <!-- Menu Pessoa Física -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="pessoaFisicaDropdown" role="button" data-bs-toggle="dropdown">
@@ -44,9 +45,6 @@
                             </a></li>
                             <li><a class="dropdown-item" href="{{ route('users.index') }}?status=reprovado&tipo=pessoa_fisica">
                                 <i class="fas fa-times-circle me-2"></i>Reprovados
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-fisica.create') }}">
-                                <i class="fas fa-plus me-2"></i>Nova Pessoa Física
                             </a></li>
                         </ul>
                     </li>
@@ -72,9 +70,6 @@
                             <li><a class="dropdown-item" href="{{ route('users.index') }}?status=reprovado&tipo=pessoa_juridica">
                                 <i class="fas fa-times-circle me-2"></i>Reprovados
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.create') }}">
-                                <i class="fas fa-plus me-2"></i>Nova Pessoa Jurídica
-                            </a></li>
                         </ul>
                     </li>
 
@@ -95,9 +90,6 @@
                             </a></li>
                             <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}?tipo=salario">
                                 <i class="fas fa-briefcase me-2"></i>Contas Salário
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ route('contas-bancarias.create') }}">
-                                <i class="fas fa-plus me-2"></i>Nova Conta
                             </a></li>
                         </ul>
                     </li>
@@ -126,6 +118,7 @@
                             </a></li>
                         </ul>
                     </li>
+                    @endif
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     @guest
@@ -182,5 +175,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @yield('scripts')
+    @stack('scripts')
 </body>
 </html>

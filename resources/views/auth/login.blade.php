@@ -33,6 +33,9 @@
                         </button>
                     </div>
                 </form>
+                <div class="text-center mt-3">
+                    <a href="{{ route('register') }}">Não tem uma conta? Registre-se</a>
+                </div>
             </div>
         </div>
     </div>

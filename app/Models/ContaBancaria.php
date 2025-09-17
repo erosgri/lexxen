@@ -14,11 +14,9 @@ class ContaBancaria extends Model
 
     protected $fillable = [
         'user_id',
-        'numero_conta',
+        'numero',
         'agencia',
         'tipo_conta',
-        'saldo',
-        'limite',
         'status',
     ];
 
@@ -39,6 +37,23 @@ class ContaBancaria extends Model
     }
 
     /**
+     * Relacionamento com Carteiras
+     */
+    public function carteiras()
+    {
+        return $this->hasMany(Carteira::class, 'conta_bancaria_id');
+    }
+
+    /**
+     * Calcula o saldo da conta somando os saldos das carteiras.
+     */
+    public function getSaldoAttribute()
+    {
+        // O método 'sum' é otimizado e faz a soma diretamente no banco de dados.
+        return $this->carteiras()->sum('saldo');
+    }
+
+    /**
      * Gera número de conta único
      */
     public static function gerarNumeroConta()
@@ -46,7 +61,7 @@ class ContaBancaria extends Model
         do {
             $numero = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
             $numero = $numero . '-' . rand(0, 9);
-        } while (self::where('numero_conta', $numero)->exists());
+        } while (self::where('numero', $numero)->exists());
 
         return $numero;
     }
@@ -64,6 +79,14 @@ class ContaBancaria extends Model
      */
     public function getLimiteFormatadoAttribute()
     {
-        return 'R$ ' . number_format($this->limite, 2, ',', '.');
+        return 'R$ 0,00'; // Limite foi removido, retornamos um valor padrão.
+    }
+
+    /**
+     * Relacionamento com Transacoes
+     */
+    public function transacoes()
+    {
+        return $this->hasMany(Transacao::class, 'conta_id');
     }
 }

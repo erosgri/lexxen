@@ -15,7 +15,8 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['pessoaFisica', 'pessoaJuridica', 'contasBancarias']);
+        $query = User::with(['pessoaFisica', 'pessoaJuridica'])
+                     ->withCount('contasBancarias');
         
         // Filtro por status de aprovação
         if ($request->has('status')) {
@@ -29,14 +30,7 @@ class UserController extends Controller
             $query->where('tipo_usuario', $tipo);
         }
         
-        $users = $query->get();
-        
-        // Adicionar informações de contas bancárias
-        $users->each(function($user) {
-            $user->contas_info = $user->contasBancarias->groupBy('tipo_conta')->map(function($contas) {
-                return $contas->count();
-            });
-        });
+        $users = $query->latest()->paginate(20);
         
         return view('users.index', compact('users'));
     }
@@ -160,24 +154,9 @@ class UserController extends Controller
     /**
      * Reprova um usuário.
      */
-    public function reprove(Request $request, User $user)
+    public function reprove(User $user)
     {
-        $validator = Validator::make($request->all(), [
-            'motivo_reprovacao' => 'required|string|min:10|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        $user->update([
-            'status_aprovacao' => 'reprovado',
-            'aprovado_em' => null,
-            'motivo_reprovacao' => $request->motivo_reprovacao,
-        ]);
-
-        return redirect()->route('users.index')->with('success', "Usuário {$user->email} reprovado com sucesso!");
+        $user->update(['status_aprovacao' => 'reprovado']);
+        return redirect()->route('users.index')->with('success', 'Usuário reprovado com sucesso.');
     }
 }
