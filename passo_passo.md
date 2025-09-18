@@ -1,6 +1,8 @@
 # 🏦 Grigolli Bank - Guia de Testes Passo a Passo
 
 ## 📋 Pré-requisitos
+
+- php artisan serve
 - Sistema rodando em `http://localhost:8000`
 - Usuários de teste criados (admin e clientes)
 - Banco de dados configurado
