@@ -56,3 +56,4 @@ class CarteiraResource extends JsonResource
 
 
 
+

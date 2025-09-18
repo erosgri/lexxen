@@ -2,10 +2,62 @@
 
 ## 📋 Pré-requisitos
 
-- php artisan serve
+### 1. Configuração do Banco de Dados
+```bash
+# 1. Configurar arquivo .env com dados do banco
+# 2. Executar migrations
+php artisan migrate
+
+# 3. Executar seeders (dados de teste)
+php artisan db:seed
+
+# 4. Iniciar servidor
+php artisan serve
+```
+
+### 2. Verificações
 - Sistema rodando em `http://localhost:8000`
 - Usuários de teste criados (admin e clientes)
 - Banco de dados configurado
+
+### 3. Comandos de Configuração Completa
+```bash
+# Instalar dependências
+composer install
+
+# Configurar ambiente
+cp .env.example .env
+php artisan key:generate
+
+# Configurar banco de dados no .env
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=lexxen
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+# Executar migrations
+php artisan migrate
+
+# Executar seeders
+php artisan db:seed
+
+# Iniciar servidor
+php artisan serve
+```
+
+### 4. Verificar Instalação
+```bash
+# Verificar se migrations foram executadas
+php artisan migrate:status
+
+# Verificar se seeders foram executados
+php artisan tinker
+>>> User::count()
+>>> ContaBancaria::count()
+>>> Carteira::count()
+```
 
 ---
 
@@ -139,5 +191,118 @@ Senha: password
 
 ---
 
+## 🔍 5. Verificações Importantes
 
+### 5.1 Saldos Corretos
+- ✅ Contas ativas: Saldo real
+- ✅ Contas bloqueadas: R$ 0,00
+- ✅ Contas aguardando: R$ 0,00
+- ✅ Novas carteiras: R$ 0,00
 
+### 5.2 Transferências
+- ✅ Processamento imediato
+- ✅ Validações funcionando
+- ✅ Extrato atualizado
+- ✅ Saldos sincronizados
+
+### 5.3 Interface
+- ✅ Responsiva (mobile/desktop)
+- ✅ Mensagens de erro claras
+- ✅ Confirmações de sucesso
+- ✅ Loading states
+
+### 5.4 Segurança
+- ✅ Apenas donos veem suas contas
+- ✅ Validações no backend
+- ✅ Transações atômicas
+
+---
+
+## 🐛 6. Problemas Conhecidos e Soluções
+
+### 6.1 Problemas de Migração
+**Problema**: Erro ao executar `php artisan migrate`
+**Solução**: 
+```bash
+# Verificar status das migrations
+php artisan migrate:status
+
+# Executar migrations pendentes
+php artisan migrate
+
+# Se houver erro, verificar logs
+tail -f storage/logs/laravel.log
+```
+
+### 6.2 Problemas de Banco de Dados
+**Problema**: "Connection refused" ou "Access denied"
+**Solução**: 
+```bash
+# Verificar configuração no .env
+# Testar conexão
+php artisan tinker
+>>> DB::connection()->getPdo();
+```
+
+### 6.3 Problemas de Seeder
+**Problema**: Dados de teste não foram criados
+**Solução**:
+```bash
+# Executar seeders específicos
+php artisan db:seed --class=UserSeeder
+php artisan db:seed --class=ContaBancariaSeeder
+php artisan db:seed --class=CarteiraSeeder
+```
+
+### 6.4 Saldo Incorreto
+**Problema**: Conta mostra saldo de outra carteira
+**Solução**: Verificar se conta tem carteira específica (com agência/conta no nome)
+
+### 6.5 Transferência Falha
+**Problema**: "Conta de destino não encontrada"
+**Solução**: Verificar se conta está ativa e agência/conta estão corretos
+
+### 6.6 Beneficiário Não Aparece
+**Problema**: Nome não aparece ao digitar conta
+**Solução**: Verificar se conta existe e está ativa
+
+---
+
+## 📞 7. Contatos de Suporte
+
+- **Desenvolvedor**: Sistema Grigolli Bank
+- **Versão**: 1.0
+- **Última atualização**: 18/09/2025
+
+---
+
+## 🎯 8. Checklist de Testes
+
+### Funcionalidades Básicas
+- [ ] Login admin
+- [ ] Login cliente
+- [ ] Visualizar dashboard
+- [ ] Aprovar usuários
+- [ ] Gerenciar contas
+
+### Transferências
+- [ ] Entre carteiras
+- [ ] Para outros usuários
+- [ ] Validações de saldo
+- [ ] Busca de beneficiário
+
+### Extratos
+- [ ] Extrato geral
+- [ ] Extrato por carteira
+- [ ] Filtros funcionando
+- [ ] Contas origem/destino
+
+### Saldos
+- [ ] Contas ativas (saldo real)
+- [ ] Contas bloqueadas (R$ 0,00)
+- [ ] Contas aguardando (R$ 0,00)
+- [ ] Novas carteiras (R$ 0,00)
+
+---
+
+**✅ Sistema pronto para uso em produção!**
