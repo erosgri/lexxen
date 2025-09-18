@@ -58,38 +58,39 @@
                            <span class="badge bg-dark">{{ $user->contas_bancarias_count }}</span>
                         </td>
                         <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
-                        <td>
-                            <div class="btn-group" role="group">
+                        <td class="text-center">
+                            <div class="btn-group" role="group" aria-label="Ações do Usuário">
+                                <a href="{{ route('users.show', $user->id) }}" class="btn btn-sm btn-info text-white" data-bs-toggle="tooltip" title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" title="Editar Usuário">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                                 @if($user->isAguardandoAprovacao())
-                                    <!-- Botão Aprovar -->
                                     <form action="{{ route('users.approve', $user->id) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-success" title="Aprovar Usuário">
+                                        <button type="submit" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Aprovar Usuário">
                                             <i class="fas fa-check"></i>
                                         </button>
                                     </form>
-
-                                    <!-- Botão Reprovar (com Modal) -->
-                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#reproveModal-{{ $user->id }}" title="Reprovar Usuário">
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#reproveModal-{{ $user->id }}" data-bs-toggle="tooltip" title="Reprovar Usuário">
                                         <i class="fas fa-times"></i>
                                     </button>
+                                @elseif($user->isAprovado())
+                                    <form action="{{ route('users.block', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja bloquear este usuário?')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-dark" data-bs-toggle="tooltip" title="Bloquear Usuário">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </form>
+                                @elseif($user->status_aprovacao === 'bloqueado')
+                                    <form action="{{ route('users.unblock', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja desbloquear este usuário?')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-secondary" data-bs-toggle="tooltip" title="Desbloquear Usuário">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                    </form>
                                 @endif
-                                
-                                <!-- Ações Padrão -->
-                                <a href="{{ route('users.show', $user->id) }}" class="btn btn-sm btn-outline-info" title="Ver Detalhes">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('users.edit', $user->id) }}" class="btn btn-sm btn-outline-warning" title="Editar Usuário">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                            onclick="return confirm('Tem certeza que deseja remover este usuário?')" title="Remover Usuário">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
                             </div>
                         </td>
                     </tr>

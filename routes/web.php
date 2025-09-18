@@ -8,6 +8,7 @@ use App\Http\Controllers\ContaBancariaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ContaController;
+use App\Http\Controllers\ExtratoController;
 use App\Http\Middleware\AdminMiddleware;
 
 Route::middleware(['auth'])->group(function () {
@@ -17,6 +18,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class);
     Route::post('users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
     Route::post('users/{user}/reprove', [UserController::class, 'reprove'])->name('users.reprove');
+    Route::post('users/{user}/block', [UserController::class, 'block'])->name('users.block');
+    Route::post('users/{user}/unblock', [UserController::class, 'unblock'])->name('users.unblock');
 
     // Rotas para Pessoa Física
     Route::resource('pessoa-fisica', PessoaFisicaController::class);
@@ -36,10 +39,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/abrir', [ContaController::class, 'abrirContaForm'])->name('abrir.form');
         Route::post('/abrir', [ContaController::class, 'abrirConta'])->name('abrir.store');
         Route::get('/extrato/{conta}', [ContaController::class, 'extrato'])->name('extrato');
-        Route::get('/saque/{conta}', [ContaController::class, 'saqueForm'])->name('saque.form');
-        Route::post('/saque/{conta}', [ContaController::class, 'saque'])->name('saque.store');
         Route::get('/transferencia/{conta}', [ContaController::class, 'transferenciaForm'])->name('transferencia.form');
         Route::post('/transferencia/{conta}', [ContaController::class, 'transferencia'])->name('transferencia.store');
+    });
+
+    // Rotas de Extrato
+    Route::prefix('extrato')->name('extrato.')->group(function () {
+        Route::get('/', [ExtratoController::class, 'index'])->name('index');
+        Route::get('/carteira/{carteira}', [ExtratoController::class, 'carteira'])->name('carteira');
     });
 });
 

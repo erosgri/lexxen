@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\ContaBancaria;
 use Faker\Factory as Faker;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class ContaController extends Controller
 {
@@ -24,27 +25,47 @@ class ContaController extends Controller
     public function abrirConta(Request $request)
     {
         $request->validate([
-            'tipo_conta' => ['required', 'in:corrente,poupanca,salario'],
+            'tipo_conta' => ['required', 'in:corrente_pf,poupanca_pf,corrente_pj,poupanca_pj'],
         ]);
 
         $faker = Faker::create('pt_BR');
         $user = Auth::user();
 
+        // Determina o tipo de conta e o tipo de usuário baseado na seleção
+        $tipoConta = $request->input('tipo_conta');
+        $isPJ = str_ends_with($tipoConta, '_pj');
+        $tipoContaBase = str_replace(['_pf', '_pj'], '', $tipoConta);
+
         $conta = ContaBancaria::create([
             'user_id' => $user->id,
             'numero' => ContaBancaria::gerarNumeroConta(),
             'agencia' => $faker->numerify('####'),
-            'tipo_conta' => $request->input('tipo_conta'),
-            'status' => 'AGUARDANDO_APROVACAO', // Alterado de ATIVA
+            'tipo_conta' => $tipoContaBase,
+            'status' => 'AGUARDANDO_APROVACAO',
         ]);
 
-        // Cria a carteira principal para a nova conta
-        $conta->carteiras()->create([
-            'nome' => 'Principal',
-            'saldo' => 0,
-        ]);
+        // Cria a carteira principal para o usuário
+        $owner = null;
+        if ($user->tipo_usuario === 'pessoa_fisica') {
+            $owner = $user->pessoaFisica;
+        } elseif ($user->tipo_usuario === 'pessoa_juridica') {
+            $owner = $user->pessoaJuridica;
+        }
 
-        return redirect()->route('home')->with('success', 'Nova conta aberta com sucesso!');
+        if ($owner) {
+            $tipoContaFormatado = ucfirst($tipoContaBase);
+            $sufixo = $isPJ ? ' (PJ)' : ' (PF)';
+            
+            $owner->carteiras()->create([
+                'name' => 'Principal - ' . $tipoContaFormatado . $sufixo,
+                'balance' => 0,
+                'type' => 'DEFAULT',
+                'status' => 'AGUARDANDO_LIBERACAO',
+                'approval_status' => 'pending', // Carteira aguarda aprovação da conta bancária
+            ]);
+        }
+
+        return redirect()->route('home')->with('success', 'Solicitação de nova carteira enviada! Aguarde a aprovação do administrador.');
     }
 
     /**
@@ -57,54 +78,27 @@ class ContaController extends Controller
             abort(403, 'Acesso não autorizado.');
         }
 
-        $transacoes = $conta->transacoes()->latest()->paginate(15);
+        // Busca transações através das carteiras do usuário
+        $user = Auth::user();
+        $transacoes = collect();
+        
+        if ($user->tipo_usuario === 'pessoa_fisica' && $user->pessoaFisica) {
+            $transacoes = $user->pessoaFisica->carteiras()
+                ->with('transacoes')
+                ->get()
+                ->pluck('transacoes')
+                ->flatten()
+                ->sortByDesc('created_at');
+        } elseif ($user->tipo_usuario === 'pessoa_juridica' && $user->pessoaJuridica) {
+            $transacoes = $user->pessoaJuridica->carteiras()
+                ->with('transacoes')
+                ->get()
+                ->pluck('transacoes')
+                ->flatten()
+                ->sortByDesc('created_at');
+        }
 
         return view('conta.extrato', compact('conta', 'transacoes'));
-    }
-
-    /**
-     * Mostra o formulário para realizar um saque.
-     */
-    public function saqueForm(ContaBancaria $conta)
-    {
-        if ($conta->user_id !== Auth::id()) {
-            abort(403, 'Acesso não autorizado.');
-        }
-
-        return view('conta.saque', compact('conta'));
-    }
-
-    /**
-     * Processa a operação de saque.
-     */
-    public function saque(Request $request, ContaBancaria $conta)
-    {
-        if ($conta->user_id !== Auth::id()) {
-            abort(403, 'Acesso não autorizado.');
-        }
-
-        $request->validate([
-            'valor' => ['required', 'numeric', 'min:0.01', 'max:' . $conta->saldo],
-            'descricao' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        DB::transaction(function () use ($request, $conta) {
-            // Assumimos que a operação é na carteira principal
-            $carteira = $conta->carteiras()->first();
-
-            // Atualiza o saldo da carteira
-            $carteira->saldo -= $request->input('valor');
-            $carteira->save();
-
-            // Cria o registro da transação
-            $conta->transacoes()->create([
-                'tipo' => 'SAQUE',
-                'valor' => $request->input('valor'),
-                'descricao' => $request->input('descricao') ?? 'Saque realizado',
-            ]);
-        });
-
-        return redirect()->route('home')->with('success', 'Saque realizado com sucesso!');
     }
 
     /**
@@ -128,10 +122,29 @@ class ContaController extends Controller
             abort(403, 'Acesso não autorizado.');
         }
 
+        $user = Auth::user();
+        $owner = null;
+        if ($user->tipo_usuario === 'pessoa_fisica') {
+            $owner = $user->pessoaFisica;
+        } elseif ($user->tipo_usuario === 'pessoa_juridica') {
+            $owner = $user->pessoaJuridica;
+        }
+
+        if (!$owner) {
+            return back()->with('error', 'Perfil não encontrado.');
+        }
+
+        // Busca a carteira principal do usuário
+        $carteiraOrigem = $owner->carteiras()->where('type', 'DEFAULT')->first();
+        
+        if (!$carteiraOrigem) {
+            return back()->with('error', 'Carteira não encontrada.');
+        }
+
         $request->validate([
             'agencia_destino' => ['required', 'string'],
             'conta_destino' => ['required', 'string'],
-            'valor' => ['required', 'numeric', 'min:0.01', 'max:' . $contaOrigem->saldo],
+            'valor' => ['required', 'numeric', 'min:0.01', 'max:' . $carteiraOrigem->balance],
         ]);
 
         $valor = $request->input('valor');
@@ -148,29 +161,75 @@ class ContaController extends Controller
             return back()->with('error', 'Você não pode transferir para a mesma conta.');
         }
 
-        DB::transaction(function () use ($contaOrigem, $contaDestino, $valor) {
-            $carteiraOrigem = $contaOrigem->carteiras()->first();
-            $carteiraDestino = $contaDestino->carteiras()->first();
+        // Busca a carteira do usuário de destino
+        $userDestino = $contaDestino->user;
+        $ownerDestino = null;
+        if ($userDestino->tipo_usuario === 'pessoa_fisica') {
+            $ownerDestino = $userDestino->pessoaFisica;
+        } elseif ($userDestino->tipo_usuario === 'pessoa_juridica') {
+            $ownerDestino = $userDestino->pessoaJuridica;
+        }
 
-            // Debita da conta de origem
-            $carteiraOrigem->saldo -= $valor;
+        if (!$ownerDestino) {
+            return back()->with('error', 'Perfil de destino não encontrado.');
+        }
+
+        $carteiraDestino = $ownerDestino->carteiras()->where('type', 'DEFAULT')->first();
+        
+        if (!$carteiraDestino) {
+            return back()->with('error', 'Carteira de destino não encontrada.');
+        }
+
+        DB::transaction(function () use ($carteiraOrigem, $carteiraDestino, $valor, $contaDestino, $contaOrigem) {
+            // Debita da carteira de origem
+            $carteiraOrigem->balance -= $valor;
             $carteiraOrigem->save();
-            $contaOrigem->transacoes()->create([
-                'tipo' => 'TRANSFERENCIA_ENVIADA',
+            $carteiraOrigem->transacoes()->create([
+                'tipo' => 'debit',
                 'valor' => $valor,
                 'descricao' => 'Transferência para conta ' . $contaDestino->numero,
             ]);
 
-            // Credita na conta de destino
-            $carteiraDestino->saldo += $valor;
+            // Credita na carteira de destino
+            $carteiraDestino->balance += $valor;
             $carteiraDestino->save();
-            $contaDestino->transacoes()->create([
-                'tipo' => 'TRANSFERENCIA_RECEBIDA',
+            $carteiraDestino->transacoes()->create([
+                'tipo' => 'credit',
                 'valor' => $valor,
                 'descricao' => 'Transferência recebida da conta ' . $contaOrigem->numero,
             ]);
+
+            // Limpar cache das carteiras
+            $this->limparCacheTransferencia($carteiraOrigem, $carteiraDestino);
         });
 
         return redirect()->route('home')->with('success', 'Transferência realizada com sucesso!');
+    }
+
+    /**
+     * Limpa o cache das carteiras após transferência
+     */
+    protected function limparCacheTransferencia($carteiraOrigem, $carteiraDestino)
+    {
+        $userIds = [];
+        
+        // Obter user_id da carteira de origem
+        if ($carteiraOrigem->owner && $carteiraOrigem->owner->user) {
+            $userIds[] = $carteiraOrigem->owner->user->id;
+        }
+        
+        // Obter user_id da carteira de destino
+        if ($carteiraDestino->owner && $carteiraDestino->owner->user) {
+            $userIds[] = $carteiraDestino->owner->user->id;
+        }
+        
+        // Limpar cache para ambos os usuários
+        foreach (array_unique($userIds) as $userId) {
+            \Cache::forget("carteiras_user_{$userId}");
+            \Cache::forget("extratos_user_{$userId}_*");
+            \Cache::forget("resumo_user_{$userId}_*");
+            \Cache::forget("carteira_balance_{$carteiraOrigem->id}");
+            \Cache::forget("carteira_balance_{$carteiraDestino->id}");
+        }
     }
 }

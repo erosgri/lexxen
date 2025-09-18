@@ -2,20 +2,48 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\PessoaFisicaController;
-use App\Http\Controllers\PessoaJuridicaController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CarteiraController;
+use App\Http\Controllers\Api\ExtratoController;
+use App\Http\Controllers\Api\TransferenciaController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
 
-// Rotas para Usuários
-Route::apiResource('users', UserController::class);
+// Rotas públicas
+Route::post('/login', [AuthController::class, 'login']);
 
-// Rotas para Pessoa Física
-Route::apiResource('pessoa-fisica', PessoaFisicaController::class);
+// Rotas protegidas por autenticação
+Route::middleware('auth:sanctum')->group(function () {
+    // Autenticação
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/revoke-tokens', [AuthController::class, 'revokeAllTokens']);
 
-// Rotas para Pessoa Jurídica
-Route::apiResource('pessoa-juridica', PessoaJuridicaController::class);
+    // Carteiras
+    Route::apiResource('carteiras', CarteiraController::class);
+    Route::post('/carteiras/{id}/restore', [CarteiraController::class, 'restore']);
 
+    // Extratos
+    Route::get('/extratos', [ExtratoController::class, 'index']);
+    Route::get('/extratos/resumo', [ExtratoController::class, 'resumo']);
+    Route::get('/extratos/clear-cache', [ExtratoController::class, 'clearCache']);
+    Route::get('/carteiras/{carteira}/extratos', [ExtratoController::class, 'carteira']);
+    Route::get('/carteiras/{carteira}/extratos/resumo', [ExtratoController::class, 'resumoCarteira']);
+
+    // Transferências Refatorado
+    Route::get('/transferencias', [TransferenciaController::class, 'index']);
+    Route::post('/transferencias', [TransferenciaController::class, 'store']);
+    Route::get('/transferencias/{transfer}', [TransferenciaController::class, 'show']);
+    Route::post('/transferencias/buscar-conta', [TransferenciaController::class, 'buscarConta']);
+    Route::post('/transferencias/verificar-status', [TransferenciaController::class, 'verificarStatus']);
+    Route::get('/beneficiario/{agencia}/{conta}', [TransferenciaController::class, 'buscarBeneficiario']);
+});

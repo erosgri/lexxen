@@ -143,21 +143,21 @@
     </div>
 
     <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white">
+        <div class="card bg-danger text-white">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">{{ $contasAtivas }}</h4>
-                        <p class="card-text">Contas Ativas</p>
+                        <h4 class="card-title">{{ $contasBloqueadas }}</h4>
+                        <p class="card-text">Contas Bloqueadas</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x"></i>
+                        <i class="fas fa-ban fa-2x"></i>
                     </div>
                 </div>
             </div>
             <div class="card-footer">
                 <span class="text-white">
-                    {{ $totalContasBancarias > 0 ? round(($contasAtivas / $totalContasBancarias) * 100, 1) : 0 }}% do total
+                    {{ $totalContasBancarias > 0 ? round(($contasBloqueadas / $totalContasBancarias) * 100, 1) : 0 }}% do total
                 </span>
             </div>
         </div>
@@ -168,17 +168,17 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="card-title">{{ $usersReprovados }}</h4>
-                        <p class="card-text">Usuários Reprovados</p>
+                        <h4 class="card-title">{{ $usersReprovadosBloqueados }}</h4>
+                        <p class="card-text">Reprovados e Bloqueados</p>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-times-circle fa-2x"></i>
+                        <i class="fas fa-user-slash fa-2x"></i>
                     </div>
                 </div>
             </div>
             <div class="card-footer">
                 <span class="text-white">
-                    {{ $totalUsers > 0 ? round(($usersReprovados / $totalUsers) * 100, 1) : 0 }}% do total
+                    {{ $totalUsers > 0 ? round(($usersReprovadosBloqueados / $totalUsers) * 100, 1) : 0 }}% do total
                 </span>
             </div>
         </div>
@@ -285,10 +285,10 @@
     new Chart(userStatusCtx, {
         type: 'bar',
         data: {
-            labels: ['Aprovados', 'Aguardando', 'Reprovados'],
+            labels: ['Aprovados', 'Aguardando', 'Reprovados/Bloqueados'],
             datasets: [{
                 label: 'Usuários',
-                data: [{{ $usersAprovados }}, {{ $usersAguardando }}, {{ $usersReprovados }}],
+                data: [{{ $usersAprovados }}, {{ $usersAguardando }}, {{ $usersReprovadosBloqueados }}],
                 backgroundColor: [
                     '#28a745',
                     '#ffc107',

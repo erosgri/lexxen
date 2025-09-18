@@ -39,9 +39,9 @@ class PessoaFisica extends Model
     /**
      * Relacionamento com User
      */
-    public function user()
+    public function usuario()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**

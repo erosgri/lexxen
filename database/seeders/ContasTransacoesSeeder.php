@@ -18,7 +18,7 @@ class ContasTransacoesSeeder extends Seeder
         $faker = Faker::create('pt_BR');
         
         // Pega todos os usuários que não são administradores
-        $users = User::where('tipo_usuario', '!=', 'admin')->get();
+        $users = User::where('tipo_usuario', '!=', 'admin')->with(['pessoaFisica', 'pessoaJuridica'])->get();
 
         if ($users->isEmpty()) {
             $this->command->info('No non-admin users found to seed accounts and transactions.');
@@ -29,27 +29,27 @@ class ContasTransacoesSeeder extends Seeder
         $bar = $this->command->getOutput()->createProgressBar($users->count());
 
         foreach ($users as $user) {
-            // Cria uma conta bancária para cada usuário
-            $conta = ContaBancaria::create([
-                'user_id' => $user->id,
-                'numero' => ContaBancaria::gerarNumeroConta(),
-                'agencia' => $faker->numerify('####'),
-                'tipo_conta' => $faker->randomElement(['corrente', 'poupanca']),
-                'status' => 'ATIVA',
-            ]);
+            $owner = $user->tipo_usuario === 'pf' ? $user->pessoaFisica : $user->pessoaJuridica;
 
+            if (!$owner) {
+                continue;
+            }
+            
             // Cria a carteira principal com saldo inicial
-            $conta->carteiras()->create([
-                'nome' => 'Principal',
-                'saldo' => $faker->randomFloat(2, 100, 10000),
+            $carteira = $owner->carteiras()->create([
+                'name' => 'Principal',
+                'balance' => $faker->randomFloat(2, 100, 10000),
+                'type' => 'DEFAULT',
+                'status' => 'ATIVA',
+                'approval_status' => 'approved',
             ]);
 
-            // Cria transações aleatórias para a conta
+            // Cria transações aleatórias para a carteira
             $numeroDeTransacoes = rand(5, 15);
             for ($i = 0; $i < $numeroDeTransacoes; $i++) {
                 Transacao::create([
-                    'conta_id' => $conta->id,
-                    'tipo' => $faker->randomElement(['DEPOSITO', 'SAQUE']),
+                    'conta_id' => $carteira->id, // Usa o ID da carteira
+                    'tipo' => $faker->randomElement(['credit', 'debit']),
                     'valor' => $faker->randomFloat(2, 10, 500),
                     'descricao' => $faker->sentence,
                     'created_at' => $faker->dateTimeThisYear(),

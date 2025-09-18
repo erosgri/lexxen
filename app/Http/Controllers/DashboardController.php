@@ -16,9 +16,10 @@ class DashboardController extends Controller
             $usersAtivos = \App\Models\User::where('ativo', true)->count();
             $totalContasBancarias = \App\Models\ContaBancaria::count();
             $contasAtivas = \App\Models\ContaBancaria::where('status', 'ativa')->count();
+            $contasBloqueadas = \App\Models\ContaBancaria::where('status', 'bloqueada')->count();
             $usersAguardando = \App\Models\User::where('status_aprovacao', 'aguardando')->count();
             $usersAprovados = \App\Models\User::where('status_aprovacao', 'aprovado')->count();
-            $usersReprovados = \App\Models\User::where('status_aprovacao', 'reprovado')->count();
+            $usersReprovadosBloqueados = \App\Models\User::whereIn('status_aprovacao', ['reprovado', 'bloqueado'])->count();
             
             return view('dashboard', compact(
                 'totalUsers', 
@@ -27,27 +28,41 @@ class DashboardController extends Controller
                 'usersAtivos',
                 'totalContasBancarias',
                 'contasAtivas',
+                'contasBloqueadas',
                 'usersAguardando',
                 'usersAprovados',
-                'usersReprovados'
+                'usersReprovadosBloqueados'
             ));
         }
 
         // Para usuários não-admin
         $user = Auth::user();
-        $contas = $user->contasBancarias()->with('carteiras')->get(); // Carrega as carteiras para evitar N+1 queries
+        $contas = $user->contasBancarias;
         
-        // A lógica de transações pode ser ajustada para mostrar um resumo geral ou removida desta view principal
-        $transacoes = []; 
-        if ($contas->isNotEmpty()) {
-            // Pega transações da primeira conta ativa, se houver, para o resumo
-            $primeiraContaAtiva = $contas->firstWhere('status', 'ATIVA');
-            if ($primeiraContaAtiva) {
-                $transacoes = $primeiraContaAtiva->transacoes()->latest()->take(10)->get();
-            }
+        $transacoes = [];
+        $carteiras = collect(); // Inicializa a coleção de carteiras
+
+        if ($user->tipo_usuario === 'pessoa_fisica' && $user->pessoaFisica) {
+            $owner = $user->pessoaFisica;
+            // Buscar carteiras sempre frescos do banco para garantir dados atualizados
+            $carteiras = $owner->carteiras()
+                ->where('status', 'ATIVA')
+                ->where('approval_status', 'approved')
+                ->orderBy('created_at')
+                ->get();
+            $transacoes = $carteiras->pluck('transacoes')->flatten()->sortByDesc('created_at')->take(10);
+        } elseif ($user->tipo_usuario === 'pessoa_juridica' && $user->pessoaJuridica) {
+            $owner = $user->pessoaJuridica;
+            // Buscar carteiras sempre frescos do banco para garantir dados atualizados
+            $carteiras = $owner->carteiras()
+                ->where('status', 'ATIVA')
+                ->where('approval_status', 'approved')
+                ->orderBy('created_at')
+                ->get();
+            $transacoes = $carteiras->pluck('transacoes')->flatten()->sortByDesc('created_at')->take(10);
         }
 
-        return view('conta.index', compact('user', 'contas', 'transacoes'));
+        return view('conta.index', compact('user', 'contas', 'transacoes', 'carteiras'));
     }
 }
 

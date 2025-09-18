@@ -20,37 +20,12 @@ class ContaBancaria extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'saldo' => 'decimal:2',
-            'limite' => 'decimal:2',
-        ];
-    }
-
     /**
      * Relacionamento com User
      */
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Relacionamento com Carteiras
-     */
-    public function carteiras()
-    {
-        return $this->hasMany(Carteira::class, 'conta_bancaria_id');
-    }
-
-    /**
-     * Calcula o saldo da conta somando os saldos das carteiras.
-     */
-    public function getSaldoAttribute()
-    {
-        // O método 'sum' é otimizado e faz a soma diretamente no banco de dados.
-        return $this->carteiras()->sum('saldo');
     }
 
     /**
@@ -64,29 +39,5 @@ class ContaBancaria extends Model
         } while (self::where('numero', $numero)->exists());
 
         return $numero;
-    }
-
-    /**
-     * Formata o saldo para exibição
-     */
-    public function getSaldoFormatadoAttribute()
-    {
-        return 'R$ ' . number_format($this->saldo, 2, ',', '.');
-    }
-
-    /**
-     * Formata o limite para exibição
-     */
-    public function getLimiteFormatadoAttribute()
-    {
-        return 'R$ 0,00'; // Limite foi removido, retornamos um valor padrão.
-    }
-
-    /**
-     * Relacionamento com Transacoes
-     */
-    public function transacoes()
-    {
-        return $this->hasMany(Transacao::class, 'conta_id');
     }
 }

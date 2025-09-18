@@ -154,9 +154,32 @@ class UserController extends Controller
     /**
      * Reprova um usuário.
      */
-    public function reprove(User $user)
+    public function reprove(Request $request, User $user)
     {
-        $user->update(['status_aprovacao' => 'reprovado']);
-        return redirect()->route('users.index')->with('success', 'Usuário reprovado com sucesso.');
+        $request->validate(['motivo_reprovacao' => 'required|string|min:10']);
+        $user->update([
+            'status_aprovacao' => 'reprovado',
+            'motivo_reprovacao' => $request->motivo_reprovacao,
+            'aprovado_em' => null,
+        ]);
+        return back()->with('success', 'Usuário reprovado com sucesso.');
+    }
+
+    /**
+     * Bloquear um usuário.
+     */
+    public function block(User $user)
+    {
+        $user->update(['status_aprovacao' => 'bloqueado']);
+        return back()->with('success', 'Usuário bloqueado com sucesso.');
+    }
+
+    /**
+     * Desbloquear um usuário.
+     */
+    public function unblock(User $user)
+    {
+        $user->update(['status_aprovacao' => 'aprovado']);
+        return back()->with('success', 'Usuário desbloqueado com sucesso.');
     }
 }

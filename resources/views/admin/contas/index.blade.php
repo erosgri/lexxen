@@ -24,7 +24,6 @@
                             <th>Email</th>
                             <th>Ag./Conta</th>
                             <th>Tipo</th>
-                            <th class="text-end">Saldo</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
@@ -36,7 +35,6 @@
                                 <td>{{ $conta->user->email }}</td>
                                 <td>{{ $conta->agencia }} / {{ $conta->numero }}</td>
                                 <td>{{ ucfirst($conta->tipo_conta) }}</td>
-                                <td class="text-end fw-bold">{{ $conta->getSaldoFormatadoAttribute() }}</td>
                                 <td>
                                     @if ($conta->status == 'ATIVA')
                                         <span class="badge bg-success">ATIVA</span>
@@ -66,7 +64,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">Nenhuma conta encontrada.</td>
+                                <td colspan="6" class="text-center">Nenhuma conta encontrada.</td>
                             </tr>
                         @endforelse
                     </tbody>

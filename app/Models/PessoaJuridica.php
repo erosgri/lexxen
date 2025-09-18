@@ -32,11 +32,13 @@ class PessoaJuridica extends Model
     ];
 
     /**
-     * Relacionamento com User
+     * Get the user that owns the PessoaJuridica
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function user()
+    public function usuario()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**

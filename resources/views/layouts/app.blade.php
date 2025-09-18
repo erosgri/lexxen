@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- API Token -->
+    @auth
+        @php
+            $token = Auth::user()->createToken('auth_token')->plainTextToken;
+        @endphp
+        <meta name="api-token" content="{{ $token }}">
+    @endauth
+
     <title>@yield('title', config('app.name'))</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    @stack('styles')
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -24,26 +34,34 @@
                         </a>
                     </li>
                     
+                    @if (Auth::user() && Auth::user()->tipo_usuario !== 'admin')
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('extrato.index') }}">
+                            <i class="fas fa-file-invoice-dollar me-1"></i>Extrato
+                        </a>
+                    </li>
+                    @endif
+                    
                     @if (Auth::user() && Auth::user()->tipo_usuario === 'admin')
                     <!-- Menu Pessoa Física -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="pessoaFisicaDropdown" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="pessoaFisicaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user me-1"></i>Pessoa Física
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" aria-labelledby="pessoaFisicaDropdown">
                             <li><a class="dropdown-item" href="{{ route('pessoa-fisica.index') }}">
                                 <i class="fas fa-list me-2"></i>Todas as Pessoas Físicas
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-fisica.index') }}?tipo_conta=corrente">
+                            <li><a class="dropdown-item" href="{{ route('pessoa-fisica.index', ['tipo_conta' => 'corrente']) }}">
                                 <i class="fas fa-credit-card me-2"></i>Com Conta Corrente
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-fisica.index') }}?tipo_conta=poupanca">
+                            <li><a class="dropdown-item" href="{{ route('pessoa-fisica.index', ['tipo_conta' => 'poupanca']) }}">
                                 <i class="fas fa-piggy-bank me-2"></i>Com Conta Poupança
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('users.index') }}?status=aguardando&tipo=pessoa_fisica">
+                            <li><a class="dropdown-item" href="{{ route('users.index', ['status' => 'aguardando', 'tipo' => 'pessoa_fisica']) }}">
                                 <i class="fas fa-clock me-2"></i>Aguardando Aprovação
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('users.index') }}?status=reprovado&tipo=pessoa_fisica">
+                            <li><a class="dropdown-item" href="{{ route('users.index', ['status' => 'reprovado', 'tipo' => 'pessoa_fisica']) }}">
                                 <i class="fas fa-times-circle me-2"></i>Reprovados
                             </a></li>
                         </ul>
@@ -51,23 +69,23 @@
 
                     <!-- Menu Pessoa Jurídica -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="pessoaJuridicaDropdown" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="pessoaJuridicaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-building me-1"></i>Pessoa Jurídica
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" aria-labelledby="pessoaJuridicaDropdown">
                             <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index') }}">
                                 <i class="fas fa-list me-2"></i>Todas as Pessoas Jurídicas
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index') }}?tipo_conta=corrente">
+                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index', ['tipo_conta' => 'corrente']) }}">
                                 <i class="fas fa-credit-card me-2"></i>Com Conta Corrente
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index') }}?tipo_conta=salario">
+                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index', ['tipo_conta' => 'salario']) }}">
                                 <i class="fas fa-briefcase me-2"></i>Com Conta Salário
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('users.index') }}?status=aguardando&tipo=pessoa_juridica">
+                            <li><a class="dropdown-item" href="{{ route('users.index', ['status' => 'aguardando', 'tipo' => 'pessoa_juridica']) }}">
                                 <i class="fas fa-clock me-2"></i>Aguardando Aprovação
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('users.index') }}?status=reprovado&tipo=pessoa_juridica">
+                            <li><a class="dropdown-item" href="{{ route('users.index', ['status' => 'reprovado', 'tipo' => 'pessoa_juridica']) }}">
                                 <i class="fas fa-times-circle me-2"></i>Reprovados
                             </a></li>
                         </ul>
@@ -174,6 +192,14 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/imask"></script> <!-- Biblioteca de Máscara -->
+    <script>
+        // Inicializa todos os tooltips da página
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
     @yield('scripts')
     @stack('scripts')
 </body>

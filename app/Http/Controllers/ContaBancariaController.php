@@ -12,7 +12,7 @@ class ContaBancariaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ContaBancaria::with(['user', 'carteiras']); // Carrega usuário e carteiras
+        $query = ContaBancaria::with('user'); // Carrega apenas o usuário
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -29,6 +29,25 @@ class ContaBancariaController extends Controller
     public function approve(ContaBancaria $conta)
     {
         $conta->update(['status' => 'ATIVA']);
+        
+        // Ativa as carteiras do usuário quando a conta for aprovada
+        $user = $conta->user;
+        if ($user->tipo_usuario === 'pessoa_fisica' && $user->pessoaFisica) {
+            $user->pessoaFisica->carteiras()
+                ->where('status', 'AGUARDANDO_LIBERACAO')
+                ->update([
+                    'status' => 'ATIVA',
+                    'approval_status' => 'approved'
+                ]);
+        } elseif ($user->tipo_usuario === 'pessoa_juridica' && $user->pessoaJuridica) {
+            $user->pessoaJuridica->carteiras()
+                ->where('status', 'AGUARDANDO_LIBERACAO')
+                ->update([
+                    'status' => 'ATIVA',
+                    'approval_status' => 'approved'
+                ]);
+        }
+        
         return back()->with('success', 'Conta ativada com sucesso.');
     }
 
@@ -38,6 +57,25 @@ class ContaBancariaController extends Controller
     public function reprove(ContaBancaria $conta)
     {
         $conta->update(['status' => 'BLOQUEADA']);
+        
+        // Desativa as carteiras do usuário quando a conta for reprovada
+        $user = $conta->user;
+        if ($user->tipo_usuario === 'pessoa_fisica' && $user->pessoaFisica) {
+            $user->pessoaFisica->carteiras()
+                ->where('status', 'AGUARDANDO_LIBERACAO')
+                ->update([
+                    'status' => 'DESATIVA',
+                    'approval_status' => 'rejected'
+                ]);
+        } elseif ($user->tipo_usuario === 'pessoa_juridica' && $user->pessoaJuridica) {
+            $user->pessoaJuridica->carteiras()
+                ->where('status', 'AGUARDANDO_LIBERACAO')
+                ->update([
+                    'status' => 'DESATIVA',
+                    'approval_status' => 'rejected'
+                ]);
+        }
+        
         return back()->with('success', 'Conta bloqueada com sucesso.');
     }
 }

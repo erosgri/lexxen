@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('transacoes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('conta_id')->constrained('contas_bancarias')->onDelete('cascade');
-            $table->enum('tipo', ['DEPOSITO', 'SAQUE', 'TRANSFERENCIA_ENVIADA', 'TRANSFERENCIA_RECEBIDA']);
+            $table->foreignId('conta_id')->constrained('carteiras')->onDelete('cascade');
+            $table->enum('tipo', ['credit', 'debit']);
             $table->decimal('valor', 15, 2);
             $table->string('descricao')->nullable();
             $table->timestamps();
