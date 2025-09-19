@@ -46,4 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transferencias/buscar-conta', [TransferenciaController::class, 'buscarConta']);
     Route::post('/transferencias/verificar-status', [TransferenciaController::class, 'verificarStatus']);
     Route::get('/beneficiario/{agencia}/{conta}', [TransferenciaController::class, 'buscarBeneficiario']);
+    Route::get('/carteira/{carteiraId}/saldo', [TransferenciaController::class, 'buscarSaldoCarteira']);
 });
+
+// Rota pública para buscar destinatário (sem autenticação)
+Route::post('/buscar-destinatario', [TransferenciaController::class, 'buscarDestinatario']);

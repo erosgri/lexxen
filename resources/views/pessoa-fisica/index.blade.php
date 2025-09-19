@@ -58,7 +58,25 @@
                                 <td>
                                     @if($pessoa->contas_info->isNotEmpty())
                                         @foreach($pessoa->contas_info as $tipo => $quantidade)
-                                            <span class="badge bg-secondary">{{ ucfirst($tipo) }}: {{ $quantidade }}</span>
+                                            @switch($tipo)
+                                                @case('corrente')
+                                                    <span class="badge bg-primary me-1">
+                                                        <i class="fas fa-credit-card me-1"></i>Conta Corrente: {{ $quantidade }}
+                                                    </span>
+                                                    @break
+                                                @case('poupanca')
+                                                    <span class="badge bg-info me-1">
+                                                        <i class="fas fa-piggy-bank me-1"></i>Conta Poupança: {{ $quantidade }}
+                                                    </span>
+                                                    @break
+                                                @case('empresarial')
+                                                    <span class="badge bg-warning text-dark me-1">
+                                                        <i class="fas fa-building me-1"></i>Conta Empresarial
+                                                    </span>
+                                                    @break
+                                                @default
+                                                    <span class="badge bg-secondary me-1">{{ ucfirst($tipo) }}: {{ $quantidade }}</span>
+                                            @endswitch
                                         @endforeach
                                     @else
                                         <span class="badge bg-light text-dark">Nenhuma</span>

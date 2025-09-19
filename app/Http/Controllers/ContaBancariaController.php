@@ -18,6 +18,10 @@ class ContaBancariaController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->has('tipo_conta') && !empty($request->get('tipo_conta'))) {
+            $query->where('tipo_conta', $request->get('tipo_conta'));
+        }
+
         $contas = $query->latest()->paginate(20);
 
         return view('admin.contas.index', compact('contas'));
@@ -30,22 +34,34 @@ class ContaBancariaController extends Controller
     {
         $conta->update(['status' => 'ATIVA']);
         
-        // Ativa as carteiras do usuário quando a conta for aprovada
+        // Ativa apenas a carteira específica da conta aprovada
         $user = $conta->user;
+        $owner = null;
+        
         if ($user->tipo_usuario === 'pessoa_fisica' && $user->pessoaFisica) {
-            $user->pessoaFisica->carteiras()
-                ->where('status', 'AGUARDANDO_LIBERACAO')
-                ->update([
-                    'status' => 'ATIVA',
-                    'approval_status' => 'approved'
-                ]);
+            $owner = $user->pessoaFisica;
         } elseif ($user->tipo_usuario === 'pessoa_juridica' && $user->pessoaJuridica) {
-            $user->pessoaJuridica->carteiras()
+            $owner = $user->pessoaJuridica;
+        }
+        
+        if ($owner) {
+            // Busca a carteira específica criada para esta conta
+            $tipoContaFormatado = ucfirst($conta->tipo_conta);
+            $nomeCarteira = 'Principal - ' . $tipoContaFormatado;
+            
+            // Ativa apenas a carteira específica desta conta
+            $carteira = $owner->carteiras()
+                ->where('name', $nomeCarteira)
                 ->where('status', 'AGUARDANDO_LIBERACAO')
-                ->update([
+                ->where('approval_status', 'pending')
+                ->first();
+                
+            if ($carteira) {
+                $carteira->update([
                     'status' => 'ATIVA',
                     'approval_status' => 'approved'
                 ]);
+            }
         }
         
         return back()->with('success', 'Conta ativada com sucesso.');

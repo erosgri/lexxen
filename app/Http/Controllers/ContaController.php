@@ -16,6 +16,13 @@ class ContaController extends Controller
      */
     public function abrirContaForm()
     {
+        $user = Auth::user();
+        
+        // Verificar se o usuário está aprovado
+        if (!$user->isAprovado()) {
+            return redirect()->route('home')->with('error', 'Apenas usuários aprovados podem abrir novas carteiras.');
+        }
+        
         return view('conta.abrir');
     }
 
@@ -25,22 +32,26 @@ class ContaController extends Controller
     public function abrirConta(Request $request)
     {
         $request->validate([
-            'tipo_conta' => ['required', 'in:corrente_pf,poupanca_pf,corrente_pj,poupanca_pj'],
+            'tipo_conta' => ['required', 'in:corrente,poupanca,empresarial'],
         ]);
 
-        $faker = Faker::create('pt_BR');
         $user = Auth::user();
+        
+        // Verificar se o usuário está aprovado
+        if (!$user->isAprovado()) {
+            return redirect()->route('home')->with('error', 'Apenas usuários aprovados podem abrir novas carteiras.');
+        }
 
-        // Determina o tipo de conta e o tipo de usuário baseado na seleção
+        $faker = Faker::create('pt_BR');
+
+        // Determina o tipo de conta
         $tipoConta = $request->input('tipo_conta');
-        $isPJ = str_ends_with($tipoConta, '_pj');
-        $tipoContaBase = str_replace(['_pf', '_pj'], '', $tipoConta);
 
         $conta = ContaBancaria::create([
             'user_id' => $user->id,
             'numero' => ContaBancaria::gerarNumeroConta(),
             'agencia' => $faker->numerify('####'),
-            'tipo_conta' => $tipoContaBase,
+            'tipo_conta' => $tipoConta,
             'status' => 'AGUARDANDO_APROVACAO',
         ]);
 
@@ -53,11 +64,11 @@ class ContaController extends Controller
         }
 
         if ($owner) {
-            $tipoContaFormatado = ucfirst($tipoContaBase);
-            $sufixo = $isPJ ? ' (PJ)' : ' (PF)';
+            $tipoContaFormatado = ucfirst($tipoConta);
+            $nomeCarteira = 'Principal - ' . $tipoContaFormatado;
             
             $owner->carteiras()->create([
-                'name' => 'Principal - ' . $tipoContaFormatado . $sufixo,
+                'name' => $nomeCarteira,
                 'balance' => 0,
                 'type' => 'DEFAULT',
                 'status' => 'AGUARDANDO_LIBERACAO',
@@ -116,11 +127,13 @@ class ContaController extends Controller
     /**
      * Processa a operação de transferência.
      */
-    public function transferencia(Request $request, ContaBancaria $contaOrigem)
+    public function transferencia(Request $request, $id)
     {
-        if ($contaOrigem->user_id !== Auth::id()) {
-            abort(403, 'Acesso não autorizado.');
-        }
+        \Log::info('Transferência iniciada', [
+            'carteira_id' => $id,
+            'user_id' => Auth::id(),
+            'request_data' => $request->all()
+        ]);
 
         $user = Auth::user();
         $owner = null;
@@ -131,34 +144,52 @@ class ContaController extends Controller
         }
 
         if (!$owner) {
-            return back()->with('error', 'Perfil não encontrado.');
+            \Log::error('Perfil não encontrado', ['user_id' => Auth::id()]);
+            return response()->json(['success' => false, 'message' => 'Perfil não encontrado.'], 400);
         }
 
-        // Busca a carteira principal do usuário
-        $carteiraOrigem = $owner->carteiras()->where('type', 'DEFAULT')->first();
+        // Busca a carteira pelo ID
+        $carteiraOrigem = $owner->carteiras()->where('id', $id)->first();
         
         if (!$carteiraOrigem) {
-            return back()->with('error', 'Carteira não encontrada.');
+            \Log::error('Carteira não encontrada', ['carteira_id' => $id, 'user_id' => Auth::id()]);
+            return response()->json(['success' => false, 'message' => 'Carteira não encontrada.'], 400);
         }
 
-        $request->validate([
-            'agencia_destino' => ['required', 'string'],
-            'conta_destino' => ['required', 'string'],
-            'valor' => ['required', 'numeric', 'min:0.01', 'max:' . $carteiraOrigem->balance],
-        ]);
+        try {
+            $request->validate([
+                'agencia_destino' => ['required', 'string'],
+                'conta_destino' => ['required', 'string'],
+                'valor' => ['required', 'numeric', 'min:0.01', 'max:' . $carteiraOrigem->balance],
+                'descricao' => ['nullable', 'string', 'max:255'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Erro de validação', ['errors' => $e->errors()]);
+            return response()->json(['success' => false, 'message' => 'Dados inválidos', 'errors' => $e->errors()], 422);
+        }
 
         $valor = $request->input('valor');
+        $descricao = $request->input('descricao', '');
 
-        $contaDestino = ContaBancaria::where('agencia', $request->input('agencia_destino'))
-                                     ->where('numero', $request->input('conta_destino'))
+        $agencia = $request->input('agencia_destino');
+        $conta = $request->input('conta_destino');
+        $contaSemHifen = str_replace('-', '', $conta);
+        
+        $contaDestino = ContaBancaria::where('agencia', $agencia)
+                                     ->where(function ($query) use ($conta, $contaSemHifen) {
+                                         $query->where('numero', $conta)
+                                               ->orWhere('numero', $contaSemHifen)
+                                               ->orWhereRaw("REPLACE(numero, '-', '') = ?", [$contaSemHifen]);
+                                     })
                                      ->first();
 
         if (!$contaDestino) {
-            return back()->with('error', 'Conta de destino não encontrada.');
-        }
-
-        if ($contaDestino->id === $contaOrigem->id) {
-            return back()->with('error', 'Você não pode transferir para a mesma conta.');
+            \Log::error('Conta de destino não encontrada', [
+                'agencia' => $agencia,
+                'conta' => $conta,
+                'conta_sem_hifen' => $contaSemHifen
+            ]);
+            return response()->json(['success' => false, 'message' => 'Conta de destino não encontrada.'], 400);
         }
 
         // Busca a carteira do usuário de destino
@@ -171,39 +202,79 @@ class ContaController extends Controller
         }
 
         if (!$ownerDestino) {
-            return back()->with('error', 'Perfil de destino não encontrado.');
+            \Log::error('Perfil de destino não encontrado', ['conta_destino_id' => $contaDestino->id]);
+            return response()->json(['success' => false, 'message' => 'Perfil de destino não encontrado.'], 400);
         }
 
-        $carteiraDestino = $ownerDestino->carteiras()->where('type', 'DEFAULT')->first();
+        // Busca a carteira específica da conta bancária de destino
+        $carteiraDestino = $ownerDestino->carteiras()
+            ->where('name', 'like', '%' . $contaDestino->agencia . '%')
+            ->where('name', 'like', '%' . $contaDestino->numero . '%')
+            ->first();
+        
+        // Se não encontrar carteira específica, cria uma nova carteira para esta conta bancária
+        if (!$carteiraDestino) {
+            $tipoContaFormatado = ucfirst($contaDestino->tipo_conta);
+            $nomeCarteira = $tipoContaFormatado . ' - ' . $contaDestino->agencia . '/' . $contaDestino->numero;
+            
+            $carteiraDestino = $ownerDestino->carteiras()->create([
+                'name' => $nomeCarteira,
+                'balance' => 0,
+                'type' => 'WALLET',
+                'status' => 'ATIVA',
+                'approval_status' => 'approved',
+            ]);
+            
+            \Log::info('Carteira específica criada para conta bancária', [
+                'conta_bancaria' => $contaDestino->agencia . '-' . $contaDestino->numero,
+                'carteira_id' => $carteiraDestino->id,
+                'carteira_name' => $carteiraDestino->name
+            ]);
+        }
         
         if (!$carteiraDestino) {
-            return back()->with('error', 'Carteira de destino não encontrada.');
+            \Log::error('Carteira de destino não encontrada', ['user_destino_id' => $userDestino->id]);
+            return response()->json(['success' => false, 'message' => 'Carteira de destino não encontrada.'], 400);
         }
 
-        DB::transaction(function () use ($carteiraOrigem, $carteiraDestino, $valor, $contaDestino, $contaOrigem) {
-            // Debita da carteira de origem
-            $carteiraOrigem->balance -= $valor;
-            $carteiraOrigem->save();
-            $carteiraOrigem->transacoes()->create([
-                'tipo' => 'debit',
-                'valor' => $valor,
-                'descricao' => 'Transferência para conta ' . $contaDestino->numero,
+        try {
+            DB::transaction(function () use ($carteiraOrigem, $carteiraDestino, $valor, $contaDestino, $descricao) {
+                // Debita da carteira de origem
+                $carteiraOrigem->balance -= $valor;
+                $carteiraOrigem->save();
+                $carteiraOrigem->transacoes()->create([
+                    'tipo' => 'debit',
+                    'valor' => $valor,
+                    'descricao' => 'Transferência para conta ' . $contaDestino->numero . ($descricao ? ' - ' . $descricao : ''),
+                ]);
+
+                // Credita na carteira de destino
+                $carteiraDestino->balance += $valor;
+                $carteiraDestino->save();
+                $carteiraDestino->transacoes()->create([
+                    'tipo' => 'credit',
+                    'valor' => $valor,
+                    'descricao' => 'Transferência recebida da conta ' . $contaDestino->numero . ($descricao ? ' - ' . $descricao : ''),
+                ]);
+
+                // Limpar cache das carteiras
+                $this->limparCacheTransferencia($carteiraOrigem, $carteiraDestino);
+            });
+
+            \Log::info('Transferência realizada com sucesso', [
+                'carteira_origem_id' => $carteiraOrigem->id,
+                'carteira_destino_id' => $carteiraDestino->id,
+                'valor' => $valor
             ]);
 
-            // Credita na carteira de destino
-            $carteiraDestino->balance += $valor;
-            $carteiraDestino->save();
-            $carteiraDestino->transacoes()->create([
-                'tipo' => 'credit',
-                'valor' => $valor,
-                'descricao' => 'Transferência recebida da conta ' . $contaOrigem->numero,
+            return response()->json(['success' => true, 'message' => 'Transferência realizada com sucesso!']);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao processar transferência', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-
-            // Limpar cache das carteiras
-            $this->limparCacheTransferencia($carteiraOrigem, $carteiraDestino);
-        });
-
-        return redirect()->route('home')->with('success', 'Transferência realizada com sucesso!');
+            return response()->json(['success' => false, 'message' => 'Erro ao processar transferência: ' . $e->getMessage()], 500);
+        }
     }
 
     /**

@@ -3,63 +3,104 @@
 namespace App\Observers;
 
 use App\Models\User;
+use App\Models\ContaBancaria;
+use App\Models\Carteira;
 
 class UserObserver
 {
-    /**
-     * Handle the User "created" event.
-     */
-    public function created(User $user): void
-    {
-        //
-    }
-
     /**
      * Handle the User "updated" event.
      */
     public function updated(User $user): void
     {
-        if ($user->wasChanged('approval_status') && $user->approval_status === 'approved') {
-            $owner = null;
-            if ($user->tipo_usuario === 'pessoa_fisica') {
-                $owner = $user->pessoaFisica;
-            } elseif ($user->tipo_usuario === 'pessoa_juridica') {
-                $owner = $user->pessoaJuridica;
-            }
-
-            if ($owner) {
-                $owner->carteiras()->create([
-                    'name' => 'Principal',
-                    'balance' => 0,
-                    'type' => 'DEFAULT',
-                    'status' => 'ATIVA',
-                    'approval_status' => 'approved',
-                ]);
-            }
+        // Verificar se o status_aprovacao mudou
+        if ($user->wasChanged('status_aprovacao')) {
+            $this->sincronizarStatusContas($user);
         }
     }
 
     /**
-     * Handle the User "deleted" event.
+     * Sincroniza o status das contas bancárias e carteiras com o status do usuário
      */
-    public function deleted(User $user): void
+    private function sincronizarStatusContas(User $user): void
     {
-        //
+        $novoStatus = $user->status_aprovacao;
+        
+        // Obter todas as contas bancárias do usuário
+        $contas = $user->contasBancarias;
+        
+        foreach ($contas as $conta) {
+            $statusConta = $this->determinarStatusConta($novoStatus);
+            $conta->update(['status' => $statusConta]);
+            
+            // Sincronizar carteiras associadas
+            $this->sincronizarCarteiras($user, $statusConta);
+        }
     }
 
     /**
-     * Handle the User "restored" event.
+     * Determina o status da conta baseado no status do usuário
      */
-    public function restored(User $user): void
+    private function determinarStatusConta(string $statusUsuario): string
     {
-        //
+        return match($statusUsuario) {
+            'aprovado' => 'ATIVA',
+            'bloqueado', 'reprovado' => 'BLOQUEADA',
+            'aguardando' => 'AGUARDANDO_APROVACAO',
+            default => 'AGUARDANDO_APROVACAO'
+        };
     }
 
     /**
-     * Handle the User "force deleted" event.
+     * Sincroniza as carteiras do usuário
      */
-    public function forceDeleted(User $user): void
+    private function sincronizarCarteiras(User $user, string $statusConta): void
     {
-        //
+        $owner = $user->tipo_usuario === 'pessoa_fisica' 
+            ? $user->pessoaFisica 
+            : $user->pessoaJuridica;
+
+        if (!$owner) {
+            return;
+        }
+
+        $carteiras = $owner->carteiras;
+        
+        foreach ($carteiras as $carteira) {
+            $statusCarteira = $this->determinarStatusCarteira($statusConta);
+            $approvalStatus = $this->determinarApprovalStatus($user->status_aprovacao);
+            
+            $carteira->update([
+                'status' => $statusCarteira,
+                'approval_status' => $approvalStatus
+            ]);
+        }
+    }
+
+    /**
+     * Determina o status da carteira baseado no status da conta
+     */
+    private function determinarStatusCarteira(string $statusConta): string
+    {
+        return match($statusConta) {
+            'ATIVA' => 'ATIVA',
+            'BLOQUEADA' => 'BLOQUEADA',
+            'AGUARDANDO_APROVACAO' => 'AGUARDANDO_LIBERACAO',
+            default => 'AGUARDANDO_LIBERACAO'
+        };
+    }
+
+    /**
+     * Determina o approval_status da carteira baseado no status do usuário
+     */
+    private function determinarApprovalStatus(string $statusUsuario): string
+    {
+        return match($statusUsuario) {
+            'aprovado' => 'approved',
+            'bloqueado' => 'blocked',
+            'reprovado' => 'rejected',
+            'aguardando' => 'pending',
+            default => 'pending'
+        };
     }
 }

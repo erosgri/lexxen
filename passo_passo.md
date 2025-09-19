@@ -1,6 +1,356 @@
-# 🏦 Grigolli Bank - Guia de Testes Passo a Passo
+# 🏦 Grigolli Bank - Guia Completo de Instalação e Testes
 
-## 📋 Pré-requisitos
+## 🚀 INSTALAÇÃO EM NOVO PC - PASSO A PASSO COMPLETO
+
+### 1. 📋 Pré-requisitos do Sistema
+
+#### 1.1 Software Necessário
+```bash
+# PHP 8.1 ou superior
+php --version
+
+# Composer (gerenciador de dependências PHP)
+composer --version
+
+# MySQL 8.0 ou MariaDB 10.3+
+mysql --version
+
+# Node.js 16+ (para assets)
+node --version
+npm --version
+
+# Git (para clonar repositório)
+git --version
+```
+
+#### 1.2 Instalação no Windows (WAMP/XAMPP)
+```bash
+# 1. Baixar e instalar WAMP Server
+# https://www.wampserver.com/en/
+
+# 2. Ou baixar e instalar XAMPP
+# https://www.apachefriends.org/
+
+# 3. Instalar Composer
+# https://getcomposer.org/download/
+
+# 4. Instalar Node.js
+# https://nodejs.org/
+```
+
+#### 1.3 Instalação no Linux (Ubuntu/Debian)
+```bash
+# Atualizar sistema
+sudo apt update && sudo apt upgrade -y
+
+# Instalar PHP e extensões
+sudo apt install php8.1 php8.1-cli php8.1-mysql php8.1-xml php8.1-mbstring php8.1-curl php8.1-zip php8.1-bcmath php8.1-gd
+
+# Instalar MySQL
+sudo apt install mysql-server
+
+# Instalar Composer
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+
+# Instalar Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+### 2. 🗄️ Configuração do Banco de Dados
+
+#### 2.1 Criar Banco de Dados
+```sql
+-- Conectar ao MySQL
+mysql -u root -p
+
+-- Criar banco de dados
+CREATE DATABASE lexxen CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Criar usuário (opcional, pode usar root)
+CREATE USER 'lexxen_user'@'localhost' IDENTIFIED BY 'sua_senha_aqui';
+GRANT ALL PRIVILEGES ON lexxen.* TO 'lexxen_user'@'localhost';
+FLUSH PRIVILEGES;
+
+-- Sair do MySQL
+EXIT;
+```
+
+#### 2.2 Configurar Arquivo .env
+```bash
+# Copiar arquivo de exemplo
+cp .env.example .env
+
+# Editar arquivo .env com suas configurações
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=lexxen
+# DB_USERNAME=root
+# DB_PASSWORD=sua_senha_aqui
+```
+
+### 3. 📥 Instalação do Projeto
+
+#### 3.1 Clonar/Transferir Projeto
+```bash
+# Opção 1: Se estiver em repositório Git
+git clone https://github.com/seu-usuario/lexxen.git
+cd lexxen
+
+# Opção 2: Se estiver transferindo arquivos
+# Copiar pasta do projeto para o novo PC
+# Navegar até a pasta do projeto
+cd /caminho/para/lexxen
+```
+
+#### 3.2 Instalar Dependências
+```bash
+# Instalar dependências PHP
+composer install
+
+# Instalar dependências Node.js
+npm install
+
+# Gerar chave da aplicação
+php artisan key:generate
+
+# Configurar cache
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+#### 3.3 Executar Migrations e Seeders
+```bash
+# Executar migrations (criar tabelas)
+php artisan migrate
+
+# Executar seeders (dados de teste)
+php artisan db:seed
+
+# Verificar se tudo foi criado
+php artisan migrate:status
+```
+
+#### 3.4 Configurar Permissões (Linux)
+```bash
+# Dar permissões para storage e cache
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+```
+
+### 4. 🚀 Iniciar Aplicação
+
+#### 4.1 Servidor de Desenvolvimento
+```bash
+# Iniciar servidor Laravel
+php artisan serve
+
+# Acessar no navegador
+# http://localhost:8000
+```
+
+#### 4.2 Servidor de Produção (Apache/Nginx)
+```bash
+# Configurar virtual host apontando para pasta public/
+# DocumentRoot: /caminho/para/lexxen/public
+
+# Reiniciar servidor web
+sudo systemctl restart apache2  # Apache
+sudo systemctl restart nginx    # Nginx
+```
+
+### 5. ✅ Verificação da Instalação
+
+#### 5.1 Testar Conexão com Banco
+```bash
+# Testar conexão
+php artisan tinker
+>>> DB::connection()->getPdo();
+>>> User::count();
+>>> ContaBancaria::count();
+>>> Carteira::count();
+>>> exit
+```
+
+#### 5.2 Verificar Dados de Teste
+```bash
+# Verificar usuários criados
+php artisan tinker
+>>> User::all(['id', 'email', 'tipo_usuario', 'status_aprovacao']);
+>>> exit
+```
+
+#### 5.3 Testar Aplicação
+```bash
+# Acessar URLs principais
+# http://localhost:8000 (login)
+# http://localhost:8000/dashboard (após login)
+# http://localhost:8000/conta (minhas contas)
+```
+
+### 6. 🔧 Comandos Úteis para Manutenção
+
+#### 6.1 Comandos de Cache
+```bash
+# Limpar todos os caches
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
+# Recriar caches
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+#### 6.2 Comandos de Banco de Dados
+```bash
+# Ver status das migrations
+php artisan migrate:status
+
+# Reverter última migration
+php artisan migrate:rollback
+
+# Reverter todas as migrations
+php artisan migrate:reset
+
+# Executar migrations específicas
+php artisan migrate --path=/database/migrations/2024_01_01_000000_create_users_table.php
+
+# Executar seeders específicos
+php artisan db:seed --class=UserSeeder
+```
+
+#### 6.3 Comandos de Debug
+```bash
+# Ver logs em tempo real
+tail -f storage/logs/laravel.log
+
+# Limpar logs
+php artisan log:clear
+
+# Ver rotas registradas
+php artisan route:list
+
+# Ver configurações
+php artisan config:show
+```
+
+### 7. 🚨 Solução de Problemas Comuns
+
+#### 7.1 Erro de Permissão (Linux)
+```bash
+# Problema: Permission denied
+# Solução:
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+```
+
+#### 7.2 Erro de Conexão com Banco
+```bash
+# Problema: Connection refused
+# Solução:
+# 1. Verificar se MySQL está rodando
+sudo systemctl status mysql
+
+# 2. Verificar configurações no .env
+cat .env | grep DB_
+
+# 3. Testar conexão
+php artisan tinker
+>>> DB::connection()->getPdo();
+```
+
+#### 7.3 Erro de Chave de Aplicação
+```bash
+# Problema: No application encryption key has been specified
+# Solução:
+php artisan key:generate
+php artisan config:cache
+```
+
+#### 7.4 Erro de Dependências
+```bash
+# Problema: Class not found
+# Solução:
+composer dump-autoload
+composer install --no-dev --optimize-autoloader
+```
+
+#### 7.5 Erro de Migrations
+```bash
+# Problema: Migration failed
+# Solução:
+# 1. Verificar logs
+tail -f storage/logs/laravel.log
+
+# 2. Verificar status
+php artisan migrate:status
+
+# 3. Executar migrations específicas
+php artisan migrate --force
+```
+
+### 8. 📦 Backup e Restauração
+
+#### 8.1 Backup do Banco de Dados
+```bash
+# Criar backup
+mysqldump -u root -p lexxen > backup_lexxen_$(date +%Y%m%d_%H%M%S).sql
+
+# Restaurar backup
+mysql -u root -p lexxen < backup_lexxen_20241218_143000.sql
+```
+
+#### 8.2 Backup dos Arquivos
+```bash
+# Criar backup da aplicação
+tar -czf lexxen_backup_$(date +%Y%m%d_%H%M%S).tar.gz /caminho/para/lexxen
+
+# Excluir node_modules e vendor do backup
+tar -czf lexxen_backup_$(date +%Y%m%d_%H%M%S).tar.gz \
+    --exclude=node_modules \
+    --exclude=vendor \
+    --exclude=storage/logs \
+    /caminho/para/lexxen
+```
+
+### 9. 🌐 Configuração para Produção
+
+#### 9.1 Configurações de Segurança
+```bash
+# No arquivo .env para produção:
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://seudominio.com
+
+# Configurar HTTPS
+# Configurar firewall
+# Configurar SSL
+```
+
+#### 9.2 Otimizações de Performance
+```bash
+# Otimizar autoloader
+composer install --optimize-autoloader --no-dev
+
+# Otimizar caches
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Otimizar banco de dados
+# Adicionar índices necessários
+# Configurar query cache
+```
+
+---
+
+## 📋 Pré-requisitos (Para Testes)
 
 ### 1. Configuração do Banco de Dados
 ```bash
@@ -305,4 +655,60 @@ php artisan db:seed --class=CarteiraSeeder
 
 ---
 
+---
+
+## 🚀 CHECKLIST RÁPIDO - INSTALAÇÃO EM NOVO PC
+
+### ✅ Pré-requisitos
+- [ ] PHP 8.1+ instalado
+- [ ] Composer instalado
+- [ ] MySQL/MariaDB instalado
+- [ ] Node.js instalado (opcional)
+- [ ] Git instalado (opcional)
+
+### ✅ Configuração
+- [ ] Banco de dados criado
+- [ ] Arquivo .env configurado
+- [ ] Projeto transferido/clonado
+- [ ] Dependências instaladas (`composer install`)
+- [ ] Chave da aplicação gerada (`php artisan key:generate`)
+
+### ✅ Migrations e Dados
+- [ ] Migrations executadas (`php artisan migrate`)
+- [ ] Seeders executados (`php artisan db:seed`)
+- [ ] Conexão com banco testada
+- [ ] Dados de teste verificados
+
+### ✅ Aplicação
+- [ ] Servidor iniciado (`php artisan serve`)
+- [ ] Aplicação acessível (http://localhost:8000)
+- [ ] Login funcionando
+- [ ] Dashboard carregando
+- [ ] Funcionalidades básicas testadas
+
+### ✅ Troubleshooting
+- [ ] Logs verificados (storage/logs/laravel.log)
+- [ ] Permissões configuradas (Linux)
+- [ ] Cache limpo se necessário
+- [ ] Dependências atualizadas
+
+---
+
+## 📞 Suporte e Contatos
+
+- **Projeto**: Grigolli Bank
+- **Versão**: 1.0
+- **Framework**: Laravel 10
+- **Banco**: MySQL 8.0+
+- **Última atualização**: 18/12/2024
+
+### 🔗 Links Úteis
+- [Laravel Documentation](https://laravel.com/docs)
+- [Composer Documentation](https://getcomposer.org/doc/)
+- [MySQL Documentation](https://dev.mysql.com/doc/)
+- [Bootstrap Documentation](https://getbootstrap.com/docs/)
+
+---
+
 **✅ Sistema pronto para uso em produção!**
+

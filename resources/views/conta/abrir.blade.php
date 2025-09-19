@@ -18,19 +18,14 @@
                             <label for="tipo_conta" class="form-label">Escolha o tipo da nova carteira:</label>
                             <select name="tipo_conta" id="tipo_conta" class="form-select" required>
                                 <option value="">Selecione...</option>
-                                <optgroup label="Carteiras Pessoa Física">
-                                    <option value="corrente_pf">Carteira Corrente PF</option>
-                                    <option value="poupanca_pf">Carteira Poupança PF</option>
-                                </optgroup>
-                                <optgroup label="Carteiras Pessoa Jurídica">
-                                    <option value="corrente_pj">Carteira Corrente PJ</option>
-                                    <option value="poupanca_pj">Carteira Poupança PJ</option>
-                                </optgroup>
+                                <option value="corrente">Conta Corrente</option>
+                                <option value="poupanca">Conta Poupança</option>
+                                <option value="empresarial">Conta Empresarial</option>
                             </select>
                         </div>
                         
                         <div class="alert alert-info">
-                            <p class="mb-0"><i class="fas fa-info-circle me-1"></i> A nova carteira usará os seus dados cadastrais existentes e será aberta com saldo inicial de R$ 0,00. Você pode escolher entre carteiras para Pessoa Física (PF) ou Pessoa Jurídica (PJ).</p>
+                            <p class="mb-0"><i class="fas fa-info-circle me-1"></i> A nova carteira usará os seus dados cadastrais existentes e será aberta com saldo inicial de R$ 0,00. Você pode escolher entre Conta Corrente, Conta Poupança ou Conta Empresarial.</p>
                         </div>
 
                         <div class="d-grid">

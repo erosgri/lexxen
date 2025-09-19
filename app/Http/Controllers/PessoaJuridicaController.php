@@ -18,7 +18,7 @@ class PessoaJuridicaController extends Controller
         $query = PessoaJuridica::with('user');
         
         // Filtro por tipo de conta
-        if ($request->has('tipo_conta')) {
+        if ($request->has('tipo_conta') && !empty($request->get('tipo_conta'))) {
             $tipoConta = $request->get('tipo_conta');
             $query->whereHas('user.contasBancarias', function($q) use ($tipoConta) {
                 $q->where('tipo_conta', $tipoConta);

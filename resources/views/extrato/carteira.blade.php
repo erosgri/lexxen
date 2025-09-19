@@ -34,36 +34,6 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Total Créditos</h6>
-                            <h4>R$ {{ number_format($resumo['total_creditos'], 2, ',', '.') }}</h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-arrow-up fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h6 class="card-title">Total Débitos</h6>
-                            <h4>R$ {{ number_format($resumo['total_debitos'], 2, ',', '.') }}</h4>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-arrow-down fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">

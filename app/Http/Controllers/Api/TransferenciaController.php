@@ -7,6 +7,7 @@ use App\Http\Resources\TransferenciaResource; // Corrigido para o novo resource
 use App\Services\TransferenciaService;
 use App\Http\Requests\Api\CriarTransferenciaRequest; // Usando o novo FormRequest
 use App\Models\Transfer;
+use App\Models\ContaBancaria;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -52,16 +53,28 @@ class TransferenciaController extends Controller
      */
     public function store(CriarTransferenciaRequest $request): JsonResponse
     {
-        $transferenciaDTO = $request->toDTO();
-        $resultado = [];
+        try {
+            $transferenciaDTO = $request->toDTO();
+            $resultado = [];
 
-        if ($transferenciaDTO->tipo === 'entre_carteiras') {
-            $resultado = $this->transferenciaService->processarTransferenciaEntreCarteiras($transferenciaDTO->toArray());
-        } else {
-            $resultado = $this->transferenciaService->processarTransferenciaParaOutros($transferenciaDTO->toArray());
+            if ($transferenciaDTO->tipo === 'entre_carteiras') {
+                $resultado = $this->transferenciaService->processarTransferenciaEntreCarteiras($transferenciaDTO->toArray());
+            } else {
+                $resultado = $this->transferenciaService->processarTransferenciaParaOutros($transferenciaDTO->toArray());
+            }
+            
+            return response()->json($resultado, $resultado['success'] ? 202 : 422); // 202 Accepted
+        } catch (\Exception $e) {
+            \Log::error('Erro na transferência:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro interno: ' . $e->getMessage()
+            ], 500);
         }
-        
-        return response()->json($resultado, $resultado['success'] ? 202 : 422); // 202 Accepted
     }
 
     /**
@@ -166,6 +179,114 @@ class TransferenciaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erro interno do servidor'
+            ], 500);
+        }
+    }
+
+    /**
+     * Busca o saldo atualizado de uma carteira específica
+     */
+    public function buscarSaldoCarteira(string $carteiraId): JsonResponse
+    {
+        try {
+            $carteira = \App\Models\Carteira::findOrFail($carteiraId);
+            
+            // Força a atualização do saldo do banco de dados
+            $carteira->refresh();
+            
+            return response()->json([
+                'success' => true,
+                'saldo' => $carteira->balance,
+                'saldo_formatado' => 'R$ ' . number_format($carteira->balance, 2, ',', '.')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Carteira não encontrada',
+                'saldo_formatado' => 'R$ 0,00'
+            ], 404);
+        }
+    }
+
+    /**
+     * Buscar informações do destinatário por agência e conta.
+     */
+    public function buscarDestinatario(Request $request): JsonResponse
+    {
+        try {
+            $agencia = $request->input('agencia', '');
+            $conta = $request->input('conta', '');
+
+            if (empty($agencia) || empty($conta)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Agência e conta são obrigatórios'
+                ]);
+            }
+
+            // Remover hífen da conta para busca
+            $contaSemHifen = str_replace('-', '', $conta);
+            
+            // Buscar conta bancária (tolerante a formatos com/sem hífen)
+            $contaBancaria = ContaBancaria::where('agencia', $agencia)
+                ->where(function ($query) use ($conta, $contaSemHifen) {
+                    $query->where('numero', $conta)
+                          ->orWhere('numero', $contaSemHifen)
+                          ->orWhereRaw("REPLACE(numero, '-', '') = ?", [$contaSemHifen]);
+                })
+                ->where('status', 'ATIVA')
+                ->with('user')
+                ->first();
+
+            if (!$contaBancaria) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Conta não encontrada ou inativa'
+                ]);
+            }
+
+            $user = $contaBancaria->user;
+            $nome = 'N/A';
+            $tipoConta = 'N/A';
+
+            if ($user) {
+                if ($user->tipo_usuario === 'pessoa_fisica' && $user->pessoaFisica) {
+                    $nome = $user->pessoaFisica->nome_completo;
+                } elseif ($user->tipo_usuario === 'pessoa_juridica' && $user->pessoaJuridica) {
+                    $nome = $user->pessoaJuridica->razao_social;
+                }
+            }
+
+            // Formatar tipo de conta
+            switch ($contaBancaria->tipo_conta) {
+                case 'corrente':
+                    $tipoConta = 'Conta Corrente';
+                    break;
+                case 'poupanca':
+                    $tipoConta = 'Conta Poupança';
+                    break;
+                case 'empresarial':
+                    $tipoConta = 'Conta Empresarial';
+                    break;
+                default:
+                    $tipoConta = ucfirst($contaBancaria->tipo_conta);
+            }
+
+            return response()->json([
+                'success' => true,
+                'destinatario' => [
+                    'nome' => $nome,
+                    'tipo_conta' => $tipoConta,
+                    'agencia' => $agencia,
+                    'conta' => $conta,
+                    'status' => $contaBancaria->status
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao buscar destinatário: ' . $e->getMessage()
             ], 500);
         }
     }

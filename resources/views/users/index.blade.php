@@ -10,12 +10,89 @@
     </a>
 </div>
 
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="fas fa-filter me-2"></i>Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ route('users.index') }}">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="status" class="form-label">Status de Aprovação</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="aguardando" {{ request('status') == 'aguardando' ? 'selected' : '' }}>Aguardando</option>
+                        <option value="aprovado" {{ request('status') == 'aprovado' ? 'selected' : '' }}>Aprovado</option>
+                        <option value="reprovado" {{ request('status') == 'reprovado' ? 'selected' : '' }}>Reprovado</option>
+                        <option value="bloqueado" {{ request('status') == 'bloqueado' ? 'selected' : '' }}>Bloqueado</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="tipo" class="form-label">Tipo de Usuário</label>
+                    <select name="tipo" id="tipo" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="pessoa_fisica" {{ request('tipo') == 'pessoa_fisica' ? 'selected' : '' }}>Pessoa Física</option>
+                        <option value="pessoa_juridica" {{ request('tipo') == 'pessoa_juridica' ? 'selected' : '' }}>Pessoa Jurídica</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                    <a href="{{ route('users.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>Limpar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Aprovação em Lote -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5><i class="fas fa-users-cog me-2"></i>Aprovação em Lote</h5>
+    </div>
+    <div class="card-body">
+        <form id="batch-approval-form" method="POST" action="{{ route('users.batch-approve') }}">
+            @csrf
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="batch-action" class="form-label">Ação</label>
+                    <select name="action" id="batch-action" class="form-select" required>
+                        <option value="">Selecione uma ação</option>
+                        <option value="approve">Aprovar Selecionados</option>
+                        <option value="reject">Reprovar Selecionados</option>
+                        <option value="block">Bloquear Selecionados</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="batch-reason" class="form-label">Motivo (para reprovação/bloqueio)</label>
+                    <textarea name="reason" id="batch-reason" class="form-control" rows="2" placeholder="Digite o motivo da reprovação ou bloqueio"></textarea>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary" id="batch-submit" disabled>
+                        <i class="fas fa-check me-1"></i>Executar Ação
+                    </button>
+                    <span class="ms-3 text-muted" id="selected-count">0 usuários selecionados</span>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-striped table-hover">
                 <thead class="table-dark">
                     <tr>
+                        <th>
+                            <input type="checkbox" id="select-all" class="form-check-input">
+                        </th>
                         <th>ID</th>
                         <th>Nome</th>
                         <th>Email</th>
@@ -29,6 +106,9 @@
                 <tbody>
                     @forelse($users as $user)
                     <tr>
+                        <td>
+                            <input type="checkbox" name="user_ids[]" value="{{ $user->id }}" class="form-check-input user-checkbox">
+                        </td>
                         <td>{{ $user->id }}</td>
                         <td>{{ $user->name }}</td>
                         <td>{{ $user->email }}</td>
@@ -123,7 +203,7 @@
                     @endif
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center">Nenhum usuário encontrado</td>
+                        <td colspan="8" class="text-center">Nenhum usuário encontrado</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -137,3 +217,105 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all');
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    const batchSubmit = document.getElementById('batch-submit');
+    const selectedCount = document.getElementById('selected-count');
+    const batchAction = document.getElementById('batch-action');
+    const batchReason = document.getElementById('batch-reason');
+    
+    // Selecionar/deselecionar todos
+    selectAllCheckbox.addEventListener('change', function() {
+        userCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateSelectedCount();
+        updateSubmitButton();
+    });
+    
+    // Atualizar contador quando checkboxes individuais mudarem
+    userCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectedCount();
+            updateSubmitButton();
+            
+            // Atualizar checkbox "selecionar todos"
+            const checkedCount = document.querySelectorAll('.user-checkbox:checked').length;
+            selectAllCheckbox.checked = checkedCount === userCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < userCheckboxes.length;
+        });
+    });
+    
+    // Atualizar botão de submit quando ação mudar
+    batchAction.addEventListener('change', function() {
+        updateSubmitButton();
+        
+        // Mostrar/ocultar campo de motivo
+        if (this.value === 'reject' || this.value === 'block') {
+            batchReason.required = true;
+            batchReason.parentElement.style.display = 'block';
+        } else {
+            batchReason.required = false;
+            batchReason.parentElement.style.display = 'none';
+        }
+    });
+    
+    
+    // Auto-submit do filtro quando status ou tipo mudar (comentado temporariamente)
+    // document.getElementById('status').addEventListener('change', function() {
+    //     this.form.submit();
+    // });
+    
+    // document.getElementById('tipo').addEventListener('change', function() {
+    //     this.form.submit();
+    // });
+    
+    function updateSelectedCount() {
+        const checkedCount = document.querySelectorAll('.user-checkbox:checked').length;
+        selectedCount.textContent = `${checkedCount} usuário(s) selecionado(s)`;
+    }
+    
+    function updateSubmitButton() {
+        const checkedCount = document.querySelectorAll('.user-checkbox:checked').length;
+        const hasAction = batchAction.value !== '';
+        const hasReason = batchAction.value === 'approve' || (batchAction.value !== 'approve' && batchReason.value.trim() !== '');
+        
+        batchSubmit.disabled = !(checkedCount > 0 && hasAction && hasReason);
+    }
+    
+    // Validação do formulário
+    document.getElementById('batch-approval-form').addEventListener('submit', function(e) {
+        const checkedCount = document.querySelectorAll('.user-checkbox:checked').length;
+        const action = batchAction.value;
+        const reason = batchReason.value.trim();
+        
+        if (checkedCount === 0) {
+            e.preventDefault();
+            alert('Selecione pelo menos um usuário.');
+            return;
+        }
+        
+        if (action === '') {
+            e.preventDefault();
+            alert('Selecione uma ação.');
+            return;
+        }
+        
+        if ((action === 'reject' || action === 'block') && reason === '') {
+            e.preventDefault();
+            alert('Motivo é obrigatório para reprovação e bloqueio.');
+            return;
+        }
+        
+        const actionText = action === 'approve' ? 'aprovar' : action === 'reject' ? 'reprovar' : 'bloquear';
+        if (!confirm(`Tem certeza que deseja ${actionText} ${checkedCount} usuário(s)?`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+@endpush

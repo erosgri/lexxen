@@ -19,13 +19,13 @@ class UserController extends Controller
                      ->withCount('contasBancarias');
         
         // Filtro por status de aprovação
-        if ($request->has('status')) {
+        if ($request->has('status') && !empty($request->get('status'))) {
             $status = $request->get('status');
             $query->where('status_aprovacao', $status);
         }
         
         // Filtro por tipo de usuário
-        if ($request->has('tipo')) {
+        if ($request->has('tipo') && !empty($request->get('tipo'))) {
             $tipo = $request->get('tipo');
             $query->where('tipo_usuario', $tipo);
         }
@@ -181,5 +181,60 @@ class UserController extends Controller
     {
         $user->update(['status_aprovacao' => 'aprovado']);
         return back()->with('success', 'Usuário desbloqueado com sucesso.');
+    }
+
+    /**
+     * Aprovação em lote de usuários.
+     */
+    public function batchApprove(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:approve,reject,block',
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'exists:users,id',
+            'reason' => 'required_if:action,reject,block|string|min:10'
+        ]);
+
+        $userIds = $request->user_ids;
+        $action = $request->action;
+        $reason = $request->reason;
+
+        $users = User::whereIn('id', $userIds)->get();
+        $successCount = 0;
+        $errors = [];
+
+        foreach ($users as $user) {
+            try {
+                if ($action === 'approve') {
+                    $user->update([
+                        'status_aprovacao' => 'aprovado',
+                        'aprovado_em' => now(),
+                        'motivo_reprovacao' => null,
+                    ]);
+                } elseif ($action === 'reject') {
+                    $user->update([
+                        'status_aprovacao' => 'reprovado',
+                        'motivo_reprovacao' => $reason,
+                        'aprovado_em' => null,
+                    ]);
+                } elseif ($action === 'block') {
+                    $user->update([
+                        'status_aprovacao' => 'bloqueado',
+                        'motivo_reprovacao' => $reason,
+                        'aprovado_em' => null,
+                    ]);
+                }
+                $successCount++;
+            } catch (\Exception $e) {
+                $errors[] = "Erro ao processar usuário {$user->email}: " . $e->getMessage();
+            }
+        }
+
+        $message = "Ação executada com sucesso! {$successCount} usuário(s) processado(s).";
+        if (!empty($errors)) {
+            $message .= " Erros: " . implode(', ', $errors);
+        }
+
+        return back()->with('success', $message);
     }
 }

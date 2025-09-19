@@ -185,9 +185,162 @@
     </div>
 </div>
 
-<!-- Ações Rápidas -->
+<!-- Terceira linha de cards -->
 <div class="row mb-4">
-    <div class="col-12">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ $contasAguardandoAprovacao }}</h4>
+                        <p class="card-text">Contas Aguardando Aprovação</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-hourglass-half fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ route('contas-bancarias.index') }}" class="text-white text-decoration-none">
+                    Ver todas <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ $totalCarteiras }}</h4>
+                        <p class="card-text">Total de Carteiras</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-wallet fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <span class="text-white">
+                    {{ $carteirasAtivas }} ativas
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ $totalTransferencias }}</h4>
+                        <p class="card-text">Total de Transferências</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <span class="text-white">
+                    {{ $transferenciasHoje }} hoje
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ $transferenciasPendentes }}</h4>
+                        <p class="card-text">Transferências Pendentes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <span class="text-white">
+                    {{ $transferenciasConcluidas }} concluídas
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas e Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Alertas e Pendências
+                </h5>
+            </div>
+            <div class="card-body">
+                @if($contasAguardandoAprovacao > 0)
+                <div class="alert alert-warning d-flex align-items-center mb-3">
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    <div>
+                        <strong>{{ $contasAguardandoAprovacao }} conta(s) aguardando aprovação</strong>
+                        <br>
+                        <small>Clique <a href="{{ route('contas-bancarias.index') }}" class="alert-link">aqui</a> para revisar</small>
+                    </div>
+                </div>
+                @endif
+
+                @if($usersAguardando > 0)
+                <div class="alert alert-info d-flex align-items-center mb-3">
+                    <i class="fas fa-user-clock me-2"></i>
+                    <div>
+                        <strong>{{ $usersAguardando }} usuário(s) aguardando aprovação</strong>
+                        <br>
+                        <small>Clique <a href="{{ route('users.index') }}" class="alert-link">aqui</a> para revisar</small>
+                    </div>
+                </div>
+                @endif
+
+                @if($transferenciasPendentes > 0)
+                <div class="alert alert-primary d-flex align-items-center mb-3">
+                    <i class="fas fa-clock me-2"></i>
+                    <div>
+                        <strong>{{ $transferenciasPendentes }} transferência(s) pendente(s)</strong>
+                        <br>
+                        <small>Verifique o processamento das transferências</small>
+                    </div>
+                </div>
+                @endif
+
+                @if($carteirasAguardandoLiberacao > 0)
+                <div class="alert alert-secondary d-flex align-items-center mb-3">
+                    <i class="fas fa-wallet me-2"></i>
+                    <div>
+                        <strong>{{ $carteirasAguardandoLiberacao }} carteira(s) aguardando liberação</strong>
+                        <br>
+                        <small>Relacionadas às contas bancárias pendentes</small>
+                    </div>
+                </div>
+                @endif
+
+                @if($contasAguardandoAprovacao == 0 && $usersAguardando == 0 && $transferenciasPendentes == 0 && $carteirasAguardandoLiberacao == 0)
+                <div class="alert alert-success d-flex align-items-center">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <div>
+                        <strong>Tudo em dia!</strong>
+                        <br>
+                        <small>Não há pendências que precisem de sua atenção</small>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
@@ -195,25 +348,23 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <a href="{{ route('users.create') }}" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-user-plus me-2"></i>
-                            Novo Usuário
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="{{ route('pessoa-fisica.create') }}" class="btn btn-info btn-lg w-100">
-                            <i class="fas fa-user me-2"></i>
-                            Nova Pessoa Física
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="{{ route('pessoa-juridica.create') }}" class="btn btn-warning btn-lg w-100">
-                            <i class="fas fa-building me-2"></i>
-                            Nova Pessoa Jurídica
-                        </a>
-                    </div>
+                <div class="d-grid gap-2">
+                    <a href="{{ route('users.create') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Novo Usuário
+                    </a>
+                    <a href="{{ route('pessoa-fisica.create') }}" class="btn btn-info">
+                        <i class="fas fa-user me-2"></i>
+                        Nova Pessoa Física
+                    </a>
+                    <a href="{{ route('pessoa-juridica.create') }}" class="btn btn-warning">
+                        <i class="fas fa-building me-2"></i>
+                        Nova Pessoa Jurídica
+                    </a>
+                    <a href="{{ route('contas-bancarias.index') }}" class="btn btn-success">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Gerenciar Contas
+                    </a>
                 </div>
             </div>
         </div>
@@ -222,7 +373,7 @@
 
 <!-- Resumo dos Dados -->
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
@@ -235,7 +386,7 @@
         </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
@@ -244,6 +395,19 @@
             </div>
             <div class="card-body">
                 <canvas id="userStatusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-credit-card me-2"></i>Status das Contas Bancárias
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="accountStatusChart" width="400" height="200"></canvas>
             </div>
         </div>
     </div>
@@ -312,6 +476,34 @@
             plugins: {
                 legend: {
                     display: false
+                }
+            }
+        }
+    });
+
+    // Gráfico de Status das Contas Bancárias
+    const accountStatusCtx = document.getElementById('accountStatusChart').getContext('2d');
+    new Chart(accountStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Ativas', 'Aguardando Aprovação', 'Bloqueadas'],
+            datasets: [{
+                data: [{{ $contasAtivas }}, {{ $contasAguardandoAprovacao }}, {{ $contasBloqueadas }}],
+                backgroundColor: [
+                    '#28a745',
+                    '#ffc107',
+                    '#dc3545'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
                 }
             }
         }

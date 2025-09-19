@@ -45,6 +45,14 @@ class PessoaFisica extends Model
     }
 
     /**
+     * Alias for usuario() to maintain consistency
+     */
+    public function user()
+    {
+        return $this->usuario();
+    }
+
+    /**
      * Formata o CPF para exibição
      */
     public function getCpfFormatadoAttribute()

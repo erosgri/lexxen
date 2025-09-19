@@ -40,6 +40,11 @@ class CarteiraService
 
     public function createCarteira(User $user, CarteiraDTO $dto): Carteira
     {
+        // Verificar se o usuário está aprovado
+        if (!$user->isAprovado()) {
+            throw new \Exception('Apenas usuários aprovados podem criar carteiras');
+        }
+
         if ($dto->isDefault()) {
             throw new \Exception('Usuários não podem criar carteiras do tipo DEFAULT');
         }
@@ -56,7 +61,7 @@ class CarteiraService
             $carteira = $owner->carteiras()->create([
                 'name' => $dto->name,
                 'type' => $dto->type,
-                'balance' => $dto->balance,
+                'balance' => 0, // Sempre criar carteiras com saldo zero
                 'status' => 'AGUARDANDO_LIBERACAO',
                 'approval_status' => 'pending',
             ]);

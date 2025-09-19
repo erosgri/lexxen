@@ -226,6 +226,22 @@ class ProcessarTransferenciaJob implements ShouldQueue
             throw TransferenciaException::carteiraDesabilitada($carteira->name);
         }
 
+        // Verificar status da conta bancária
+        $user = $carteira->owner->user;
+        if ($user) {
+            // Verificar se o usuário tem alguma conta bancária bloqueada
+            $contaBloqueada = $user->contasBancarias()->where('status', 'BLOQUEADA')->first();
+            if ($contaBloqueada) {
+                throw TransferenciaException::contaBancariaBloqueada($contaBloqueada->numero);
+            }
+            
+            // Verificar se o usuário tem alguma conta bancária aguardando aprovação
+            $contaAguardando = $user->contasBancarias()->where('status', 'AGUARDANDO_APROVACAO')->first();
+            if ($contaAguardando) {
+                throw TransferenciaException::contaBancariaAguardandoAprovacao($contaAguardando->numero);
+            }
+        }
+
         // Verificar saldo suficiente
         if ($carteira->balance < $valor) {
             throw TransferenciaException::saldoInsuficiente($carteira->balance, $valor);
@@ -242,6 +258,22 @@ class ProcessarTransferenciaJob implements ShouldQueue
         // Verificar se a carteira está aprovada
         if ($carteira->approval_status !== 'approved') {
             throw TransferenciaException::carteiraDestinoDesabilitada($carteira->name);
+        }
+
+        // Verificar status da conta bancária
+        $user = $carteira->owner->user;
+        if ($user) {
+            // Verificar se o usuário tem alguma conta bancária bloqueada
+            $contaBloqueada = $user->contasBancarias()->where('status', 'BLOQUEADA')->first();
+            if ($contaBloqueada) {
+                throw TransferenciaException::contaBancariaDestinoBloqueada($contaBloqueada->numero);
+            }
+            
+            // Verificar se o usuário tem alguma conta bancária aguardando aprovação
+            $contaAguardando = $user->contasBancarias()->where('status', 'AGUARDANDO_APROVACAO')->first();
+            if ($contaAguardando) {
+                throw TransferenciaException::contaBancariaDestinoAguardandoAprovacao($contaAguardando->numero);
+            }
         }
     }
 

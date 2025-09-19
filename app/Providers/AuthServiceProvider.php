@@ -77,7 +77,8 @@ class AuthServiceProvider extends ServiceProvider
 
         // Gate para verificar se o usuário pode criar carteiras
         Gate::define('create-carteira', function ($user) {
-            return $user->tipo_usuario !== 'admin' && $user->isAprovado();
+            // Usuário deve estar aprovado e ter perfil (pessoa física ou jurídica)
+            return $user->isAprovado() && in_array($user->tipo_usuario, ['pessoa_fisica', 'pessoa_juridica']);
         });
 
         // Gate para verificar se o usuário pode fazer transferências

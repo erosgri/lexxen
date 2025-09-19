@@ -20,6 +20,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('users/{user}/reprove', [UserController::class, 'reprove'])->name('users.reprove');
     Route::post('users/{user}/block', [UserController::class, 'block'])->name('users.block');
     Route::post('users/{user}/unblock', [UserController::class, 'unblock'])->name('users.unblock');
+    Route::post('users/batch-approve', [UserController::class, 'batchApprove'])->name('users.batch-approve');
 
     // Rotas para Pessoa Física
     Route::resource('pessoa-fisica', PessoaFisicaController::class);

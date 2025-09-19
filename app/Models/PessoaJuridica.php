@@ -42,6 +42,14 @@ class PessoaJuridica extends Model
     }
 
     /**
+     * Alias for usuario() to maintain consistency
+     */
+    public function user()
+    {
+        return $this->usuario();
+    }
+
+    /**
      * Formata o CNPJ para exibição
      */
     public function getCnpjFormatadoAttribute()

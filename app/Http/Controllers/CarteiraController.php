@@ -27,6 +27,14 @@ class CarteiraController extends Controller
     public function store(StoreCarteiraRequest $request)
     {
         $user = Auth::user();
+        
+        // Verificar se o usuário está aprovado
+        if (!$user->isAprovado()) {
+            return response()->json([
+                'message' => 'Apenas usuários aprovados podem criar carteiras'
+            ], 403);
+        }
+        
         $owner = $user->tipo_usuario === 'pf' ? $user->pessoaFisica : $user->pessoaJuridica;
 
         $carteira = $owner->carteiras()->create($request->validated());

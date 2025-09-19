@@ -38,4 +38,24 @@ class TransferenciaException extends Exception
     {
         return new self("Carteira DEFAULT não encontrada para o usuário ID: {$userId}");
     }
+
+    public static function contaBancariaBloqueada(string $numeroConta): self
+    {
+        return new self("A conta bancária '{$numeroConta}' está bloqueada e não pode realizar ou receber transferências.");
+    }
+
+    public static function contaBancariaAguardandoAprovacao(string $numeroConta): self
+    {
+        return new self("A conta bancária '{$numeroConta}' está aguardando aprovação e não pode realizar ou receber transferências.");
+    }
+
+    public static function contaBancariaDestinoBloqueada(string $numeroConta): self
+    {
+        return new self("A conta bancária de destino '{$numeroConta}' está bloqueada e não pode receber transferências.");
+    }
+
+    public static function contaBancariaDestinoAguardandoAprovacao(string $numeroConta): self
+    {
+        return new self("A conta bancária de destino '{$numeroConta}' está aguardando aprovação e não pode receber transferências.");
+    }
 }

@@ -41,3 +41,7 @@ class ExtratoResource extends JsonResource
 
 
 
+
+
+
+

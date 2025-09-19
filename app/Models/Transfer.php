@@ -18,6 +18,9 @@ class Transfer extends Model
         'status',
         'idempotency_key',
         'processed_at',
+        'agencia_destino',
+        'conta_destino',
+        'tipo',
     ];
 
     protected $casts = [

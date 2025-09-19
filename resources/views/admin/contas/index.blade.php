@@ -7,11 +7,56 @@
     <h2>Gerenciar Contas Bancárias</h2>
 
     <!-- Filtros -->
-    <div class="mb-3">
-        <a href="{{ route('contas-bancarias.index') }}" class="btn btn-secondary">Todas</a>
-        <a href="{{ route('contas-bancarias.index', ['status' => 'AGUARDANDO_APROVACAO']) }}" class="btn btn-warning">Aguardando Aprovação</a>
-        <a href="{{ route('contas-bancarias.index', ['status' => 'ATIVA']) }}" class="btn btn-success">Ativas</a>
-        <a href="{{ route('contas-bancarias.index', ['status' => 'BLOQUEADA']) }}" class="btn btn-danger">Bloqueadas</a>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter me-2"></i>Filtros</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Por Status:</h6>
+                    <div class="btn-group mb-3" role="group">
+                        <a href="{{ route('contas-bancarias.index') }}" 
+                           class="btn {{ !request('status') ? 'btn-primary' : 'btn-outline-primary' }}">
+                            Todas
+                        </a>
+                        <a href="{{ route('contas-bancarias.index', ['status' => 'AGUARDANDO_APROVACAO']) }}" 
+                           class="btn {{ request('status') == 'AGUARDANDO_APROVACAO' ? 'btn-warning' : 'btn-outline-warning' }}">
+                            Aguardando Aprovação
+                        </a>
+                        <a href="{{ route('contas-bancarias.index', ['status' => 'ATIVA']) }}" 
+                           class="btn {{ request('status') == 'ATIVA' ? 'btn-success' : 'btn-outline-success' }}">
+                            Ativas
+                        </a>
+                        <a href="{{ route('contas-bancarias.index', ['status' => 'BLOQUEADA']) }}" 
+                           class="btn {{ request('status') == 'BLOQUEADA' ? 'btn-danger' : 'btn-outline-danger' }}">
+                            Bloqueadas
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Por Tipo de Conta:</h6>
+                    <div class="btn-group mb-3" role="group">
+                        <a href="{{ route('contas-bancarias.index') }}" 
+                           class="btn {{ !request('tipo_conta') ? 'btn-primary' : 'btn-outline-primary' }}">
+                            Todas as Contas
+                        </a>
+                        <a href="{{ route('contas-bancarias.index', ['tipo_conta' => 'corrente']) }}" 
+                           class="btn {{ request('tipo_conta') == 'corrente' ? 'btn-info' : 'btn-outline-info' }}">
+                            <i class="fas fa-credit-card me-1"></i>Conta Corrente
+                        </a>
+                        <a href="{{ route('contas-bancarias.index', ['tipo_conta' => 'poupanca']) }}" 
+                           class="btn {{ request('tipo_conta') == 'poupanca' ? 'btn-info' : 'btn-outline-info' }}">
+                            <i class="fas fa-piggy-bank me-1"></i>Conta Poupança
+                        </a>
+                        <a href="{{ route('contas-bancarias.index', ['tipo_conta' => 'empresarial']) }}" 
+                           class="btn {{ request('tipo_conta') == 'empresarial' ? 'btn-info' : 'btn-outline-info' }}">
+                            <i class="fas fa-building me-1"></i>Conta Empresarial
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="card">
@@ -34,7 +79,27 @@
                                 <td>{{ $conta->user->name }}</td>
                                 <td>{{ $conta->user->email }}</td>
                                 <td>{{ $conta->agencia }} / {{ $conta->numero }}</td>
-                                <td>{{ ucfirst($conta->tipo_conta) }}</td>
+                                <td>
+                                    @switch($conta->tipo_conta)
+                                        @case('corrente')
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-credit-card me-1"></i>Conta Corrente
+                                            </span>
+                                            @break
+                                        @case('poupanca')
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-piggy-bank me-1"></i>Conta Poupança
+                                            </span>
+                                            @break
+                                        @case('empresarial')
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-building me-1"></i>Conta Empresarial
+                                            </span>
+                                            @break
+                                        @default
+                                            <span class="badge bg-secondary">{{ ucfirst($conta->tipo_conta) }}</span>
+                                    @endswitch
+                                </td>
                                 <td>
                                     @if ($conta->status == 'ATIVA')
                                         <span class="badge bg-success">ATIVA</span>

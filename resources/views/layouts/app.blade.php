@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- API Token -->
     @auth
@@ -34,13 +35,6 @@
                         </a>
                     </li>
                     
-                    @if (Auth::user() && Auth::user()->tipo_usuario !== 'admin')
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('extrato.index') }}">
-                            <i class="fas fa-file-invoice-dollar me-1"></i>Extrato
-                        </a>
-                    </li>
-                    @endif
                     
                     @if (Auth::user() && Auth::user()->tipo_usuario === 'admin')
                     <!-- Menu Pessoa Física -->
@@ -76,11 +70,8 @@
                             <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index') }}">
                                 <i class="fas fa-list me-2"></i>Todas as Pessoas Jurídicas
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index', ['tipo_conta' => 'corrente']) }}">
-                                <i class="fas fa-credit-card me-2"></i>Com Conta Corrente
-                            </a></li>
-                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index', ['tipo_conta' => 'salario']) }}">
-                                <i class="fas fa-briefcase me-2"></i>Com Conta Salário
+                            <li><a class="dropdown-item" href="{{ route('pessoa-juridica.index', ['tipo_conta' => 'empresarial']) }}">
+                                <i class="fas fa-building me-2"></i>Com Conta Empresarial
                             </a></li>
                             <li><a class="dropdown-item" href="{{ route('users.index', ['status' => 'aguardando', 'tipo' => 'pessoa_juridica']) }}">
                                 <i class="fas fa-clock me-2"></i>Aguardando Aprovação
@@ -100,14 +91,14 @@
                             <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}">
                                 <i class="fas fa-list me-2"></i>Todas as Contas
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}?tipo=corrente">
-                                <i class="fas fa-credit-card me-2"></i>Contas Corrente
+                            <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}?tipo_conta=corrente">
+                                <i class="fas fa-credit-card me-2"></i>Conta Corrente
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}?tipo=poupanca">
-                                <i class="fas fa-piggy-bank me-2"></i>Contas Poupança
+                            <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}?tipo_conta=poupanca">
+                                <i class="fas fa-piggy-bank me-2"></i>Conta Poupança
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}?tipo=salario">
-                                <i class="fas fa-briefcase me-2"></i>Contas Salário
+                            <li><a class="dropdown-item" href="{{ route('contas-bancarias.index') }}?tipo_conta=empresarial">
+                                <i class="fas fa-building me-2"></i>Conta Empresarial
                             </a></li>
                         </ul>
                     </li>

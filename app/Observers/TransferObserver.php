@@ -98,10 +98,12 @@ class TransferObserver
         // Limpar cache para ambos os usuários
         foreach (array_unique($userIds) as $userId) {
             \Cache::forget("carteiras_user_{$userId}");
-            \Cache::tags(['extratos', 'resumos'])->flush();
             \Cache::forget("carteira_balance_{$carteiraOrigem->id}");
             \Cache::forget("carteira_balance_{$carteiraDestino->id}");
         }
+        
+        // Limpar cache de extratos e resumos (sem usar tags)
+        \Cache::flush();
     }
 
     /**
